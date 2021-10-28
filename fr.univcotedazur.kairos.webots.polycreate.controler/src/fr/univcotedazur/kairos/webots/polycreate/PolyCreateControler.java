@@ -9,7 +9,7 @@
  *     UCA - I3S Laboratory - julien.deantoni@univ-cotedazur.fr -> initial API
  *******************************************************************************/
 
-package fr.univcotedazur.kairos.webots.polycreate.controler;
+package fr.univcotedazur.kairos.webots.polycreate;
 
 import java.util.Random;
 
@@ -29,8 +29,13 @@ import com.cyberbotics.webots.controller.Receiver;
 import com.cyberbotics.webots.controller.Robot;
 import com.cyberbotics.webots.controller.Supervisor;
 import com.cyberbotics.webots.controller.TouchSensor;
+import com.yakindu.core.rx.Observable;
+
+import fr.univcotedazur.kairos.webots.polycreate.controler.RobotStatemachine;
 
 public class PolyCreateControler extends Supervisor {
+
+	public RobotStatemachine fsm = new RobotStatemachine();
 
 	static int MAX_SPEED = 16;
 	static int NULL_SPEED = 0;
@@ -92,11 +97,6 @@ public class PolyCreateControler extends Supervisor {
 	public PolyCreateControler() {
 		timestep = (int) Math.round(this.getBasicTimeStep());
 
-
-		
-		
-		
-		
 		pen = createPen("pen");
 
 		gripMotors[0] = createMotor("motor 7");
@@ -166,12 +166,27 @@ public class PolyCreateControler extends Supervisor {
 			}
 		});
 	}
+	
+	
+	//fsm.getdoTurn().subscribe(new DoTurnObserver());
+	
 
+	
+	
+	
+	public void doTurn() {
+		turn(fsm.getAngle()*this.randdouble()+0.6);
+	}
+	
+	public void doFullTurn() {
+		turn(Math.PI);
+	}
 
 	public void openGripper() {
 		gripMotors[0].setPosition(0.5);
 		gripMotors[1].setPosition(0.5);
 	}
+	
 
 	public void closeGripper() {
 		gripMotors[0].setPosition(-0.2);
@@ -228,6 +243,7 @@ public class PolyCreateControler extends Supervisor {
 	public double randdouble() {
 		return  random.nextDouble();
 	}
+			
 
 	public void turn(double angle) {
 		stop();
@@ -249,6 +265,8 @@ public class PolyCreateControler extends Supervisor {
 		stop();
 		step(timestep);
 	}
+	
+	
 
 	/**
 	 * The values are returned as a 3D-vector, therefore only the indices 0, 1, and 2 are valid for accessing the vector.
