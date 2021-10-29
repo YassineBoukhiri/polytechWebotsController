@@ -17,6 +17,5 @@
 			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="fr.univcotedazur.kairos.webots.polycreate.controler/webotsLibs"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="src-gen/fr/univcotedazur/kairos/webots/polycreate/controler/RobotStatemachine.java"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
