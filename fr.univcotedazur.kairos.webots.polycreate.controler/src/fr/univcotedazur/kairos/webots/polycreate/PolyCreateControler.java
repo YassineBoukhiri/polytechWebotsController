@@ -187,22 +187,24 @@ public class PolyCreateControler extends Supervisor {
 		TimerService timer = new TimerService();
 		fsm.setTimerService(timer);
 		fsm.enter();
-		while (true) {
-			if (isThereVirtualwall()) {
-				System.out.println("Virtual wall detected\n");
-				fsm.raiseFrontR();
-				fsm.raiseFront();
-				fsm.raiseFrontL();
-			} else if (isThereCollisionAtLeft() || frontLeftDistanceSensor.getValue() < 250) {
-				System.out.println("          Left obstacle detected\n");
-				fsm.raiseFrontL();
-			} else if (isThereCollisionAtRight() || frontRightDistanceSensor.getValue() < 250 ||frontDistanceSensor.getValue() < 250) {
-				System.out.println("          Right obstacle detected\n");
-				fsm.raiseFrontR();
-				fsm.raiseFront();
-			} else {
-				fsm.raiseClear();
-			}
+		
+	}
+
+	public void listen(){
+		if (isThereVirtualwall()) {
+			System.out.println("Virtual wall detected\n");
+			fsm.raiseFrontR();
+			fsm.raiseFront();
+			fsm.raiseFrontL();
+		} else if (isThereCollisionAtLeft() || frontLeftDistanceSensor.getValue() < 250) {
+			System.out.println("          Left obstacle detected\n");
+			fsm.raiseFrontL();
+		} else if (isThereCollisionAtRight() || frontRightDistanceSensor.getValue() < 250 ||frontDistanceSensor.getValue() < 250) {
+			System.out.println("          Right obstacle detected\n");
+			fsm.raiseFrontR();
+			fsm.raiseFront();
+		} else {
+			fsm.raiseClear();
 		}
 	}
 
@@ -339,6 +341,7 @@ public class PolyCreateControler extends Supervisor {
 		controler.openGripper();
 		while (true) {
 			controler.passiveWait(0.1);
+			controler.listen();
 		}
 	}
 
