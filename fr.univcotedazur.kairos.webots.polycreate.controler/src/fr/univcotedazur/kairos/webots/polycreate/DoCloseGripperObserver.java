@@ -2,11 +2,11 @@ package fr.univcotedazur.kairos.webots.polycreate;
 
 import com.yakindu.core.rx.Observer;
 
-public class DoFullTurnObserver implements Observer<Void> {
+public class DoCloseGripperObserver implements Observer<Void> {
 	
 	PolyCreateControler controler;
 	
-	public DoFullTurnObserver(PolyCreateControler controler) {
+	public DoCloseGripperObserver(PolyCreateControler controler) {
 		this.controler = controler;
 	}
 
