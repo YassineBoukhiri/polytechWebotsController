@@ -12,6 +12,7 @@ public class DoGoBackwardObserver implements Observer<Void> {
 
 	@Override
 	public void next(Void value) {
+		System.out.println("I'M GOING BACKWARD");
 		controler.doGoBackward();
 	}
 

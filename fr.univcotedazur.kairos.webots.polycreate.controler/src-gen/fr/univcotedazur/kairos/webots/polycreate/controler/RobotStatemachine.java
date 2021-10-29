@@ -2,11 +2,13 @@
 package fr.univcotedazur.kairos.webots.polycreate.controler;
 
 import com.yakindu.core.IStatemachine;
+import com.yakindu.core.ITimed;
+import com.yakindu.core.ITimerService;
 import com.yakindu.core.rx.Observable;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-public class RobotStatemachine implements IStatemachine {
+public class RobotStatemachine implements IStatemachine, ITimed {
 	public enum State {
 		MAIN_REGION_MOVING,
 		MAIN_REGION_RIGHT_BLOCKED,
@@ -16,6 +18,10 @@ public class RobotStatemachine implements IStatemachine {
 	};
 	
 	private final State[] stateVector = new State[1];
+	
+	private ITimerService timerService;
+	
+	private final boolean[] timeEvents = new boolean[1];
 	
 	private BlockingQueue<Runnable> inEventQueue = new LinkedBlockingQueue<Runnable>();
 	private boolean isExecuting;
@@ -46,6 +52,9 @@ public class RobotStatemachine implements IStatemachine {
 	}
 	
 	public synchronized void enter() {
+		if (timerService == null) {
+			throw new IllegalStateException("Timer service must be set.");
+		}
 		
 		
 		if (getIsExecuting()) {
@@ -90,6 +99,7 @@ public class RobotStatemachine implements IStatemachine {
 		lTS = false;
 		rTS = false;
 		clear = false;
+		timeEvents[0] = false;
 	}
 	
 	private void microStep() {
@@ -112,6 +122,9 @@ public class RobotStatemachine implements IStatemachine {
 	}
 	
 	private void runCycle() {
+		if (timerService == null) {
+			throw new IllegalStateException("Timer service must be set.");
+		}
 		
 		
 		if (getIsExecuting()) {
@@ -126,7 +139,7 @@ public class RobotStatemachine implements IStatemachine {
 			clearInEvents();
 			
 			nextEvent();
-		} while (((((((front || frontL) || frontR) || back) || lTS) || rTS) || clear));
+		} while ((((((((front || frontL) || frontR) || back) || lTS) || rTS) || clear) || timeEvents[0]));
 		
 		isExecuting = false;
 	}
@@ -154,6 +167,21 @@ public class RobotStatemachine implements IStatemachine {
 		default:
 			return false;
 		}
+	}
+	
+	public synchronized void setTimerService(ITimerService timerService) {
+		this.timerService = timerService;
+	}
+	
+	public ITimerService getTimerService() {
+		return timerService;
+	}
+	
+	public synchronized void raiseTimeEvent(int eventID) {
+		inEventQueue.add(() -> {
+			timeEvents[eventID] = true;
+		});
+		runCycle();
 	}
 	
 	
@@ -391,7 +419,7 @@ public class RobotStatemachine implements IStatemachine {
 	
 	/* Entry action for state 'Moving'. */
 	private void entryAction_main_region_Moving() {
-		raiseDoGoForward();
+		timerService.setTimer(this, 0, 100, true);
 	}
 	
 	/* Entry action for state 'RIGHT_BLOCKED'. */
@@ -411,6 +439,11 @@ public class RobotStatemachine implements IStatemachine {
 		raiseDoGoBackward();
 		
 		raiseDoTurnRandomlyRight();
+	}
+	
+	/* Exit action for state 'Moving'. */
+	private void exitAction_main_region_Moving() {
+		timerService.unsetTimer(this, 0);
 	}
 	
 	/* 'default' enter sequence for state Moving */
@@ -445,6 +478,8 @@ public class RobotStatemachine implements IStatemachine {
 	/* Default exit sequence for state Moving */
 	private void exitSequence_main_region_Moving() {
 		stateVector[0] = State.$NULLSTATE$;
+		
+		exitAction_main_region_Moving();
 	}
 	
 	/* Default exit sequence for state RIGHT_BLOCKED */
@@ -521,6 +556,9 @@ public class RobotStatemachine implements IStatemachine {
 		}
 		/* If no transition was taken then execute local reactions */
 		if (transitioned_after==transitioned_before) {
+			if (timeEvents[0]) {
+				raiseDoGoForward();
+			}
 			transitioned_after = react(transitioned_before);
 		}
 		return transitioned_after;

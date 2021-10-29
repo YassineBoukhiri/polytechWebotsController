@@ -12,6 +12,7 @@ public class DoFullTurnObserver implements Observer<Void> {
 
 	@Override
 	public void next(Void value) {
+		System.out.println("I'M DOING A FULL TURN");
 		controler.doFullTurn();
 	}
 
