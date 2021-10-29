@@ -143,7 +143,7 @@
       </children>
       <styles xsi:type="notation:ConnectorStyle" xmi:id="_l9Tl4TgaEeyPKrFfqv7u3g" routing="Rectilinear" lineColor="4210752"/>
       <styles xsi:type="notation:FontStyle" xmi:id="_l9UM8DgaEeyPKrFfqv7u3g" fontName="Verdana"/>
-      <bendpoints xsi:type="notation:RelativeBendpoints" xmi:id="_l9Tl4jgaEeyPKrFfqv7u3g" points="[0, -6, -185, 28]$[177, -6, -8, 28]"/>
+      <bendpoints xsi:type="notation:RelativeBendpoints" xmi:id="_l9Tl4jgaEeyPKrFfqv7u3g" points="[0, -10, -185, 24]$[177, -10, -8, 24]"/>
       <sourceAnchor xsi:type="notation:IdentityAnchor" xmi:id="_l9XQQDgaEeyPKrFfqv7u3g" id="(1.0,0.6981132075471698)"/>
       <targetAnchor xsi:type="notation:IdentityAnchor" xmi:id="_l9XQQTgaEeyPKrFfqv7u3g" id="(0.0661764705882353,0.4827586206896552)"/>
     </edges>

@@ -12,7 +12,7 @@ public class DoTurnRandomlyLeftObserver implements Observer<Void> {
 
 	@Override
 	public void next(Void value) {
-		controler.doTurn();
+		controler.doTurnRandomlyLeft();
 	}
 
 }

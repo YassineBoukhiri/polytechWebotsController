@@ -35,7 +35,7 @@ import fr.univcotedazur.kairos.webots.polycreate.controler.RobotStatemachine;
 
 public class PolyCreateControler extends Supervisor {
 	
-	public RobotStatemachine fsm = new RobotStatemachine();
+	public RobotStatemachine fsm;
 
 	static int MAX_SPEED = 16;
 	static int NULL_SPEED = 0;
@@ -95,6 +95,16 @@ public class PolyCreateControler extends Supervisor {
 
 
 	public PolyCreateControler() {
+		fsm = new RobotStatemachine();
+		fsm.getDoTurnRandomlyLeft().subscribe(new DoTurnRandomlyLeftObserver(this));
+		fsm.getDoTurnRandomlyRight().subscribe(new DoTurnRandomlyRightObserver(this));
+		fsm.getDoFullTurn().subscribe(new DoFullTurnObserver(this));
+		fsm.getDoOpenGripper().subscribe(new DoOpenGripperObserver(this));
+		fsm.getDoCloseGripper().subscribe(new DoCloseGripperObserver(this));
+		fsm.getDoGoForward().subscribe(new DoGoForwardObserver(this));
+		fsm.getDoGoBackward().subscribe(new DoGoBackwardObserver(this));
+		
+		
 		timestep = (int) Math.round(this.getBasicTimeStep());
 
 		pen = createPen("pen");
@@ -168,20 +178,35 @@ public class PolyCreateControler extends Supervisor {
 	}
 	
 	
-	//fsm.getdoTurn().subscribe(new DoTurnObserver());
+	public void doOpenGripper() {
+		openGripper();
+	}
 	
-
 	
+	public void doCloseGripper() {
+		closeGripper();
+	}
 	
+	public void doTurnRandomlyLeft() {
+		turn(-Math.PI*this.randdouble()+0.6);
+	}
 	
-	public void doTurn() {
-		turn(fsm.getAngle()*this.randdouble()+0.6);
+	public void doTurnRandomlyRight() {
+		turn(Math.PI*this.randdouble()+0.6);
 	}
 	
 	public void doFullTurn() {
 		turn(Math.PI);
 	}
 
+	public void doGoForward() {
+		goForward();
+	}
+	
+	public void doGoBackward() {
+		goBackward();
+	}
+	
 	public void openGripper() {
 		gripMotors[0].setPosition(0.5);
 		gripMotors[1].setPosition(0.5);
