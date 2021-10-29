@@ -7,14 +7,14 @@
         <outgoingTransitions xmi:id="_l9SXwDgaEeyPKrFfqv7u3g" specification="front" target="_7J_7GDMVEeyuKI_D54n8rQ"/>
         <outgoingTransitions xmi:id="_jq3zwDgbEeyPKrFfqv7u3g" specification="frontL" target="_cnEZ0DgbEeyPKrFfqv7u3g"/>
       </vertices>
-      <vertices xsi:type="sgraph:State" xmi:id="_7J_7GDMVEeyuKI_D54n8rQ" specification="entry / angle=-PI&#xD;&#xA;" name="RIGHT_BLOCKED" incomingTransitions="_7J_7ETMVEeyuKI_D54n8rQ _l9SXwDgaEeyPKrFfqv7u3g">
+      <vertices xsi:type="sgraph:State" xmi:id="_7J_7GDMVEeyuKI_D54n8rQ" specification="entry / raise doTurnRandomlyLeft&#xD;&#xA;" name="RIGHT_BLOCKED" incomingTransitions="_7J_7ETMVEeyuKI_D54n8rQ _l9SXwDgaEeyPKrFfqv7u3g">
         <outgoingTransitions xmi:id="_Wc12wDgcEeyPKrFfqv7u3g" specification="frontL" target="_ToCM0DgcEeyPKrFfqv7u3g"/>
         <outgoingTransitions xmi:id="_xuGzEDgdEeyH1sJwy4uLcg" specification="[clear==true]" target="_7J_7DjMVEeyuKI_D54n8rQ"/>
       </vertices>
-      <vertices xsi:type="sgraph:State" xmi:id="_ToCM0DgcEeyPKrFfqv7u3g" specification="entry / angle=PI" name="BLOCKED" incomingTransitions="_UgGdQDgcEeyPKrFfqv7u3g _Wc12wDgcEeyPKrFfqv7u3g _uXHCEDgdEeyH1sJwy4uLcg">
+      <vertices xsi:type="sgraph:State" xmi:id="_ToCM0DgcEeyPKrFfqv7u3g" specification="entry / raise doFullTurn" name="BLOCKED" incomingTransitions="_UgGdQDgcEeyPKrFfqv7u3g _Wc12wDgcEeyPKrFfqv7u3g _uXHCEDgdEeyH1sJwy4uLcg">
         <outgoingTransitions xmi:id="_1c-4kDgdEeyH1sJwy4uLcg" specification="[clear==true]" target="_7J_7DjMVEeyuKI_D54n8rQ"/>
       </vertices>
-      <vertices xsi:type="sgraph:State" xmi:id="_cnEZ0DgbEeyPKrFfqv7u3g" specification="entry / angle=PI" name="LEFT_BLOCKED" incomingTransitions="_jq3zwDgbEeyPKrFfqv7u3g">
+      <vertices xsi:type="sgraph:State" xmi:id="_cnEZ0DgbEeyPKrFfqv7u3g" specification="entry / raise doTurnRandomlyRight" name="LEFT_BLOCKED" incomingTransitions="_jq3zwDgbEeyPKrFfqv7u3g">
         <outgoingTransitions xmi:id="_UgGdQDgcEeyPKrFfqv7u3g" specification="frontR" target="_ToCM0DgcEeyPKrFfqv7u3g"/>
         <outgoingTransitions xmi:id="_uXHCEDgdEeyH1sJwy4uLcg" specification="front" target="_ToCM0DgcEeyPKrFfqv7u3g"/>
         <outgoingTransitions xmi:id="_wh3CYDgdEeyH1sJwy4uLcg" specification="[clear==true]" target="_7J_7DjMVEeyuKI_D54n8rQ"/>
