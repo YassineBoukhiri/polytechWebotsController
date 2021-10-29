@@ -34,7 +34,7 @@ import com.yakindu.core.rx.Observable;
 import fr.univcotedazur.kairos.webots.polycreate.controler.RobotStatemachine;
 
 public class PolyCreateControler extends Supervisor {
-
+	
 	public RobotStatemachine fsm = new RobotStatemachine();
 
 	static int MAX_SPEED = 16;

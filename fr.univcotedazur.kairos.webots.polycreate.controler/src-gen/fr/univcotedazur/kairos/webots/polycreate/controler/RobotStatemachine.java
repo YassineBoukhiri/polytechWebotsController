@@ -494,14 +494,6 @@ public class RobotStatemachine implements IStatemachine {
 				react(0);
 				
 				transitioned_after = 0;
-			} else {
-				if (clear==true) {
-					exitSequence_main_region_RIGHT_BLOCKED();
-					enterSequence_main_region_Moving_default();
-					react(0);
-					
-					transitioned_after = 0;
-				}
 			}
 		}
 		/* If no transition was taken then execute local reactions */
@@ -515,13 +507,6 @@ public class RobotStatemachine implements IStatemachine {
 		long transitioned_after = transitioned_before;
 		
 		if (transitioned_after<0) {
-			if (clear==true) {
-				exitSequence_main_region_BLOCKED();
-				enterSequence_main_region_Moving_default();
-				react(0);
-				
-				transitioned_after = 0;
-			}
 		}
 		/* If no transition was taken then execute local reactions */
 		if (transitioned_after==transitioned_before) {
@@ -547,14 +532,6 @@ public class RobotStatemachine implements IStatemachine {
 					react(0);
 					
 					transitioned_after = 0;
-				} else {
-					if (clear==true) {
-						exitSequence_main_region_LEFT_BLOCKED();
-						enterSequence_main_region_Moving_default();
-						react(0);
-						
-						transitioned_after = 0;
-					}
 				}
 			}
 		}
