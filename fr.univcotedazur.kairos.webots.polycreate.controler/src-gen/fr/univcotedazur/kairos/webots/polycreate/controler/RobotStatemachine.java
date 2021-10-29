@@ -9,7 +9,9 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class RobotStatemachine implements IStatemachine {
 	public enum State {
 		MAIN_REGION_MOVING,
-		MAIN_REGION_TURNING_,
+		MAIN_REGION_RIGHT_BLOCKED,
+		MAIN_REGION_BLOCKED,
+		MAIN_REGION_LEFT_BLOCKED,
 		$NULLSTATE$
 	};
 	
@@ -37,6 +39,8 @@ public class RobotStatemachine implements IStatemachine {
 		clearInEvents();
 		
 		setAngle(0.0);
+		
+		setDistance(0.0);
 		
 		isExecuting = false;
 	}
@@ -85,6 +89,7 @@ public class RobotStatemachine implements IStatemachine {
 		back = false;
 		lTS = false;
 		rTS = false;
+		clear = false;
 	}
 	
 	private void microStep() {
@@ -92,8 +97,14 @@ public class RobotStatemachine implements IStatemachine {
 		case MAIN_REGION_MOVING:
 			main_region_Moving_react(-1);
 			break;
-		case MAIN_REGION_TURNING_:
-			main_region_Turning__react(-1);
+		case MAIN_REGION_RIGHT_BLOCKED:
+			main_region_RIGHT_BLOCKED_react(-1);
+			break;
+		case MAIN_REGION_BLOCKED:
+			main_region_BLOCKED_react(-1);
+			break;
+		case MAIN_REGION_LEFT_BLOCKED:
+			main_region_LEFT_BLOCKED_react(-1);
 			break;
 		default:
 			break;
@@ -115,7 +126,7 @@ public class RobotStatemachine implements IStatemachine {
 			clearInEvents();
 			
 			nextEvent();
-		} while ((((((front || frontL) || frontR) || back) || lTS) || rTS));
+		} while (((((((front || frontL) || frontR) || back) || lTS) || rTS) || clear));
 		
 		isExecuting = false;
 	}
@@ -134,8 +145,12 @@ public class RobotStatemachine implements IStatemachine {
 		switch (state) {
 		case MAIN_REGION_MOVING:
 			return stateVector[0] == State.MAIN_REGION_MOVING;
-		case MAIN_REGION_TURNING_:
-			return stateVector[0] == State.MAIN_REGION_TURNING_;
+		case MAIN_REGION_RIGHT_BLOCKED:
+			return stateVector[0] == State.MAIN_REGION_RIGHT_BLOCKED;
+		case MAIN_REGION_BLOCKED:
+			return stateVector[0] == State.MAIN_REGION_BLOCKED;
+		case MAIN_REGION_LEFT_BLOCKED:
+			return stateVector[0] == State.MAIN_REGION_LEFT_BLOCKED;
 		default:
 			return false;
 		}
@@ -214,84 +229,96 @@ public class RobotStatemachine implements IStatemachine {
 		}
 	}
 	
-	private boolean turn;
+	private boolean clear;
 	
 	
-	protected void raiseTurn() {
+	public void raiseClear() {
 		synchronized(RobotStatemachine.this) {
-			turn = true;
-			turnObservable.next(null);
+			inEventQueue.add(() -> {
+				clear = true;
+			});
+			runCycle();
 		}
 	}
 	
-	private Observable<Void> turnObservable = new Observable<Void>();
-	
-	public Observable<Void> getTurn() {
-		return turnObservable;
-	}
-	
-	private boolean goForward;
+	private boolean doTurn;
 	
 	
-	protected void raiseGoForward() {
+	protected void raiseDoTurn() {
 		synchronized(RobotStatemachine.this) {
-			goForward = true;
-			goForwardObservable.next(null);
+			doTurn = true;
+			doTurnObservable.next(null);
 		}
 	}
 	
-	private Observable<Void> goForwardObservable = new Observable<Void>();
+	private Observable<Void> doTurnObservable = new Observable<Void>();
 	
-	public Observable<Void> getGoForward() {
-		return goForwardObservable;
+	public Observable<Void> getDoTurn() {
+		return doTurnObservable;
 	}
 	
-	private boolean goBackward;
+	private boolean doGoForward;
 	
 	
-	protected void raiseGoBackward() {
+	protected void raiseDoGoForward() {
 		synchronized(RobotStatemachine.this) {
-			goBackward = true;
-			goBackwardObservable.next(null);
+			doGoForward = true;
+			doGoForwardObservable.next(null);
 		}
 	}
 	
-	private Observable<Void> goBackwardObservable = new Observable<Void>();
+	private Observable<Void> doGoForwardObservable = new Observable<Void>();
 	
-	public Observable<Void> getGoBackward() {
-		return goBackwardObservable;
+	public Observable<Void> getDoGoForward() {
+		return doGoForwardObservable;
 	}
 	
-	private boolean openGripper;
+	private boolean doGoBackward;
 	
 	
-	protected void raiseOpenGripper() {
+	protected void raiseDoGoBackward() {
 		synchronized(RobotStatemachine.this) {
-			openGripper = true;
-			openGripperObservable.next(null);
+			doGoBackward = true;
+			doGoBackwardObservable.next(null);
 		}
 	}
 	
-	private Observable<Void> openGripperObservable = new Observable<Void>();
+	private Observable<Void> doGoBackwardObservable = new Observable<Void>();
 	
-	public Observable<Void> getOpenGripper() {
-		return openGripperObservable;
+	public Observable<Void> getDoGoBackward() {
+		return doGoBackwardObservable;
 	}
 	
-	private boolean closeGripper;
+	private boolean doOpenGripper;
 	
 	
-	protected void raiseCloseGripper() {
+	protected void raiseDoOpenGripper() {
 		synchronized(RobotStatemachine.this) {
-			closeGripper = true;
-			closeGripperObservable.next(null);
+			doOpenGripper = true;
+			doOpenGripperObservable.next(null);
 		}
 	}
 	
-	private Observable<Void> closeGripperObservable = new Observable<Void>();
+	private Observable<Void> doOpenGripperObservable = new Observable<Void>();
 	
-	public Observable<Void> getCloseGripper() {
-		return closeGripperObservable;
+	public Observable<Void> getDoOpenGripper() {
+		return doOpenGripperObservable;
+	}
+	
+	private boolean doCloseGripper;
+	
+	
+	protected void raiseDoCloseGripper() {
+		synchronized(RobotStatemachine.this) {
+			doCloseGripper = true;
+			doCloseGripperObservable.next(null);
+		}
+	}
+	
+	private Observable<Void> doCloseGripperObservable = new Observable<Void>();
+	
+	public Observable<Void> getDoCloseGripper() {
+		return doCloseGripperObservable;
 	}
 	
 	private double angle;
@@ -308,14 +335,64 @@ public class RobotStatemachine implements IStatemachine {
 		}
 	}
 	
+	private double distance;
+	
+	public synchronized double getDistance() {
+		synchronized(RobotStatemachine.this) {
+			return distance;
+		}
+	}
+	
+	public void setDistance(double value) {
+		synchronized(RobotStatemachine.this) {
+			this.distance = value;
+		}
+	}
+	
+	public static final double pI = 3.14;
+	
+	public synchronized double getPI() {
+		synchronized(RobotStatemachine.this) {
+			return pI;
+		}
+	}
+	
+	/* Entry action for state 'RIGHT_BLOCKED'. */
+	private void entryAction_main_region_RIGHT_BLOCKED() {
+		setAngle(-pI);
+	}
+	
+	/* Entry action for state 'BLOCKED'. */
+	private void entryAction_main_region_BLOCKED() {
+		setAngle(pI);
+	}
+	
+	/* Entry action for state 'LEFT_BLOCKED'. */
+	private void entryAction_main_region_LEFT_BLOCKED() {
+		setAngle(pI);
+	}
+	
 	/* 'default' enter sequence for state Moving */
 	private void enterSequence_main_region_Moving_default() {
 		stateVector[0] = State.MAIN_REGION_MOVING;
 	}
 	
-	/* 'default' enter sequence for state Turning  */
-	private void enterSequence_main_region_Turning__default() {
-		stateVector[0] = State.MAIN_REGION_TURNING_;
+	/* 'default' enter sequence for state RIGHT_BLOCKED */
+	private void enterSequence_main_region_RIGHT_BLOCKED_default() {
+		entryAction_main_region_RIGHT_BLOCKED();
+		stateVector[0] = State.MAIN_REGION_RIGHT_BLOCKED;
+	}
+	
+	/* 'default' enter sequence for state BLOCKED */
+	private void enterSequence_main_region_BLOCKED_default() {
+		entryAction_main_region_BLOCKED();
+		stateVector[0] = State.MAIN_REGION_BLOCKED;
+	}
+	
+	/* 'default' enter sequence for state LEFT_BLOCKED */
+	private void enterSequence_main_region_LEFT_BLOCKED_default() {
+		entryAction_main_region_LEFT_BLOCKED();
+		stateVector[0] = State.MAIN_REGION_LEFT_BLOCKED;
 	}
 	
 	/* 'default' enter sequence for region main region */
@@ -328,8 +405,18 @@ public class RobotStatemachine implements IStatemachine {
 		stateVector[0] = State.$NULLSTATE$;
 	}
 	
-	/* Default exit sequence for state Turning  */
-	private void exitSequence_main_region_Turning_() {
+	/* Default exit sequence for state RIGHT_BLOCKED */
+	private void exitSequence_main_region_RIGHT_BLOCKED() {
+		stateVector[0] = State.$NULLSTATE$;
+	}
+	
+	/* Default exit sequence for state BLOCKED */
+	private void exitSequence_main_region_BLOCKED() {
+		stateVector[0] = State.$NULLSTATE$;
+	}
+	
+	/* Default exit sequence for state LEFT_BLOCKED */
+	private void exitSequence_main_region_LEFT_BLOCKED() {
 		stateVector[0] = State.$NULLSTATE$;
 	}
 	
@@ -339,8 +426,14 @@ public class RobotStatemachine implements IStatemachine {
 		case MAIN_REGION_MOVING:
 			exitSequence_main_region_Moving();
 			break;
-		case MAIN_REGION_TURNING_:
-			exitSequence_main_region_Turning_();
+		case MAIN_REGION_RIGHT_BLOCKED:
+			exitSequence_main_region_RIGHT_BLOCKED();
+			break;
+		case MAIN_REGION_BLOCKED:
+			exitSequence_main_region_BLOCKED();
+			break;
+		case MAIN_REGION_LEFT_BLOCKED:
+			exitSequence_main_region_LEFT_BLOCKED();
 			break;
 		default:
 			break;
@@ -360,9 +453,71 @@ public class RobotStatemachine implements IStatemachine {
 		long transitioned_after = transitioned_before;
 		
 		if (transitioned_after<0) {
-			if (frontL) {
+			if (frontR) {
 				exitSequence_main_region_Moving();
-				enterSequence_main_region_Turning__default();
+				enterSequence_main_region_RIGHT_BLOCKED_default();
+				react(0);
+				
+				transitioned_after = 0;
+			} else {
+				if (front) {
+					exitSequence_main_region_Moving();
+					enterSequence_main_region_RIGHT_BLOCKED_default();
+					react(0);
+					
+					transitioned_after = 0;
+				} else {
+					if (frontL) {
+						exitSequence_main_region_Moving();
+						enterSequence_main_region_LEFT_BLOCKED_default();
+						react(0);
+						
+						transitioned_after = 0;
+					}
+				}
+			}
+		}
+		/* If no transition was taken then execute local reactions */
+		if (transitioned_after==transitioned_before) {
+			transitioned_after = react(transitioned_before);
+		}
+		return transitioned_after;
+	}
+	
+	private long main_region_RIGHT_BLOCKED_react(long transitioned_before) {
+		long transitioned_after = transitioned_before;
+		
+		if (transitioned_after<0) {
+			if (frontL) {
+				exitSequence_main_region_RIGHT_BLOCKED();
+				enterSequence_main_region_BLOCKED_default();
+				react(0);
+				
+				transitioned_after = 0;
+			} else {
+				if (clear==true) {
+					exitSequence_main_region_RIGHT_BLOCKED();
+					enterSequence_main_region_Moving_default();
+					react(0);
+					
+					transitioned_after = 0;
+				}
+			}
+		}
+		/* If no transition was taken then execute local reactions */
+		if (transitioned_after==transitioned_before) {
+			transitioned_after = react(transitioned_before);
+		}
+		return transitioned_after;
+	}
+	
+	private long main_region_BLOCKED_react(long transitioned_before) {
+		long transitioned_after = transitioned_before;
+		
+		if (transitioned_after<0) {
+			if (clear==true) {
+				exitSequence_main_region_BLOCKED();
+				enterSequence_main_region_Moving_default();
 				react(0);
 				
 				transitioned_after = 0;
@@ -375,16 +530,32 @@ public class RobotStatemachine implements IStatemachine {
 		return transitioned_after;
 	}
 	
-	private long main_region_Turning__react(long transitioned_before) {
+	private long main_region_LEFT_BLOCKED_react(long transitioned_before) {
 		long transitioned_after = transitioned_before;
 		
 		if (transitioned_after<0) {
-			if (front) {
-				exitSequence_main_region_Turning_();
-				enterSequence_main_region_Moving_default();
+			if (frontR) {
+				exitSequence_main_region_LEFT_BLOCKED();
+				enterSequence_main_region_BLOCKED_default();
 				react(0);
 				
 				transitioned_after = 0;
+			} else {
+				if (front) {
+					exitSequence_main_region_LEFT_BLOCKED();
+					enterSequence_main_region_BLOCKED_default();
+					react(0);
+					
+					transitioned_after = 0;
+				} else {
+					if (clear==true) {
+						exitSequence_main_region_LEFT_BLOCKED();
+						enterSequence_main_region_Moving_default();
+						react(0);
+						
+						transitioned_after = 0;
+					}
+				}
 			}
 		}
 		/* If no transition was taken then execute local reactions */

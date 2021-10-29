@@ -31,6 +31,8 @@ import com.cyberbotics.webots.controller.Supervisor;
 import com.cyberbotics.webots.controller.TouchSensor;
 
 public class PolyCreateControler extends Supervisor {
+	
+	public RobotStatemachine fsm = new RobotStatemachine();
 
 	static int MAX_SPEED = 16;
 	static int NULL_SPEED = 0;
@@ -166,7 +168,7 @@ public class PolyCreateControler extends Supervisor {
 			}
 		});
 	}
-
+	
 
 	public void openGripper() {
 		gripMotors[0].setPosition(0.5);
