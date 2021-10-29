@@ -2,11 +2,11 @@ package fr.univcotedazur.kairos.webots.polycreate;
 
 import com.yakindu.core.rx.Observer;
 
-public class DoTurnObserver implements Observer<Void> {
+public class DoGoForwardObserver implements Observer<Void> {
 	
 	PolyCreateControler controler;
 	
-	public DoTurnObserver(PolyCreateControler controler) {
+	public DoGoForwardObserver(PolyCreateControler controler) {
 		this.controler = controler;
 	}
 
