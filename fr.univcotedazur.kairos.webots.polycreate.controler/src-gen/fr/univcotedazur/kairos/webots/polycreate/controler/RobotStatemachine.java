@@ -105,7 +105,7 @@ public class RobotStatemachine implements IStatemachine, ITimed {
 	private void microStep() {
 		switch (stateVector[0]) {
 		case MAIN_REGION_MOVING:
-			main_region_Moving_react(-1);
+			main_region_MOVING_react(-1);
 			break;
 		case MAIN_REGION_RIGHT_BLOCKED:
 			main_region_RIGHT_BLOCKED_react(-1);
@@ -417,9 +417,9 @@ public class RobotStatemachine implements IStatemachine, ITimed {
 		}
 	}
 	
-	/* Entry action for state 'Moving'. */
-	private void entryAction_main_region_Moving() {
-		timerService.setTimer(this, 0, 100, true);
+	/* Entry action for state 'MOVING'. */
+	private void entryAction_main_region_MOVING() {
+		timerService.setTimer(this, 0, (1 * 1000), true);
 	}
 	
 	/* Entry action for state 'RIGHT_BLOCKED'. */
@@ -441,14 +441,14 @@ public class RobotStatemachine implements IStatemachine, ITimed {
 		raiseDoTurnRandomlyRight();
 	}
 	
-	/* Exit action for state 'Moving'. */
-	private void exitAction_main_region_Moving() {
+	/* Exit action for state 'MOVING'. */
+	private void exitAction_main_region_MOVING() {
 		timerService.unsetTimer(this, 0);
 	}
 	
-	/* 'default' enter sequence for state Moving */
-	private void enterSequence_main_region_Moving_default() {
-		entryAction_main_region_Moving();
+	/* 'default' enter sequence for state MOVING */
+	private void enterSequence_main_region_MOVING_default() {
+		entryAction_main_region_MOVING();
 		stateVector[0] = State.MAIN_REGION_MOVING;
 	}
 	
@@ -475,11 +475,11 @@ public class RobotStatemachine implements IStatemachine, ITimed {
 		react_main_region__entry_Default();
 	}
 	
-	/* Default exit sequence for state Moving */
-	private void exitSequence_main_region_Moving() {
+	/* Default exit sequence for state MOVING */
+	private void exitSequence_main_region_MOVING() {
 		stateVector[0] = State.$NULLSTATE$;
 		
-		exitAction_main_region_Moving();
+		exitAction_main_region_MOVING();
 	}
 	
 	/* Default exit sequence for state RIGHT_BLOCKED */
@@ -501,7 +501,7 @@ public class RobotStatemachine implements IStatemachine, ITimed {
 	private void exitSequence_main_region() {
 		switch (stateVector[0]) {
 		case MAIN_REGION_MOVING:
-			exitSequence_main_region_Moving();
+			exitSequence_main_region_MOVING();
 			break;
 		case MAIN_REGION_RIGHT_BLOCKED:
 			exitSequence_main_region_RIGHT_BLOCKED();
@@ -519,33 +519,33 @@ public class RobotStatemachine implements IStatemachine, ITimed {
 	
 	/* Default react sequence for initial entry  */
 	private void react_main_region__entry_Default() {
-		enterSequence_main_region_Moving_default();
+		enterSequence_main_region_MOVING_default();
 	}
 	
 	private long react(long transitioned_before) {
 		return transitioned_before;
 	}
 	
-	private long main_region_Moving_react(long transitioned_before) {
+	private long main_region_MOVING_react(long transitioned_before) {
 		long transitioned_after = transitioned_before;
 		
 		if (transitioned_after<0) {
 			if (frontR) {
-				exitSequence_main_region_Moving();
+				exitSequence_main_region_MOVING();
 				enterSequence_main_region_RIGHT_BLOCKED_default();
 				react(0);
 				
 				transitioned_after = 0;
 			} else {
 				if (front) {
-					exitSequence_main_region_Moving();
+					exitSequence_main_region_MOVING();
 					enterSequence_main_region_RIGHT_BLOCKED_default();
 					react(0);
 					
 					transitioned_after = 0;
 				} else {
 					if (frontL) {
-						exitSequence_main_region_Moving();
+						exitSequence_main_region_MOVING();
 						enterSequence_main_region_LEFT_BLOCKED_default();
 						react(0);
 						
@@ -575,9 +575,9 @@ public class RobotStatemachine implements IStatemachine, ITimed {
 				
 				transitioned_after = 0;
 			} else {
-				if (clear==true) {
+				if (clear) {
 					exitSequence_main_region_RIGHT_BLOCKED();
-					enterSequence_main_region_Moving_default();
+					enterSequence_main_region_MOVING_default();
 					react(0);
 					
 					transitioned_after = 0;
@@ -595,9 +595,9 @@ public class RobotStatemachine implements IStatemachine, ITimed {
 		long transitioned_after = transitioned_before;
 		
 		if (transitioned_after<0) {
-			if (clear==true) {
+			if (clear) {
 				exitSequence_main_region_BLOCKED();
-				enterSequence_main_region_Moving_default();
+				enterSequence_main_region_MOVING_default();
 				react(0);
 				
 				transitioned_after = 0;
@@ -628,9 +628,9 @@ public class RobotStatemachine implements IStatemachine, ITimed {
 					
 					transitioned_after = 0;
 				} else {
-					if (clear==true) {
+					if (clear) {
 						exitSequence_main_region_LEFT_BLOCKED();
-						enterSequence_main_region_Moving_default();
+						enterSequence_main_region_MOVING_default();
 						react(0);
 						
 						transitioned_after = 0;
