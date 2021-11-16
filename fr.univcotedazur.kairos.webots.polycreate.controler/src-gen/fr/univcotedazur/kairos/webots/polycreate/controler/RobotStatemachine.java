@@ -2,26 +2,23 @@
 package fr.univcotedazur.kairos.webots.polycreate.controler;
 
 import com.yakindu.core.IStatemachine;
-import com.yakindu.core.ITimed;
-import com.yakindu.core.ITimerService;
 import com.yakindu.core.rx.Observable;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-public class RobotStatemachine implements IStatemachine, ITimed {
+public class RobotStatemachine implements IStatemachine {
 	public enum State {
 		MAIN_REGION_MOVING,
-		MAIN_REGION_RIGHT_BLOCKED,
 		MAIN_REGION_BLOCKED,
-		MAIN_REGION_LEFT_BLOCKED,
+		MAIN_REGION_VIRTUAL_WALL,
+		MAIN_REGION_PARTIALY_BLOCKED,
+		MAIN_REGION_PARTIALY_BLOCKED_R1_LEFT_BLOCKED,
+		MAIN_REGION_PARTIALY_BLOCKED_R1_RIGHT_BLOCKED,
 		$NULLSTATE$
 	};
 	
+	private State[] historyVector = new State[1];
 	private final State[] stateVector = new State[1];
-	
-	private ITimerService timerService;
-	
-	private final boolean[] timeEvents = new boolean[1];
 	
 	private BlockingQueue<Runnable> inEventQueue = new LinkedBlockingQueue<Runnable>();
 	private boolean isExecuting;
@@ -41,6 +38,9 @@ public class RobotStatemachine implements IStatemachine, ITimed {
 		for (int i = 0; i < 1; i++) {
 			stateVector[i] = State.$NULLSTATE$;
 		}
+		for (int i = 0; i < 1; i++) {
+			historyVector[i] = State.$NULLSTATE$;
+		}
 		
 		clearInEvents();
 		
@@ -52,9 +52,6 @@ public class RobotStatemachine implements IStatemachine, ITimed {
 	}
 	
 	public synchronized void enter() {
-		if (timerService == null) {
-			throw new IllegalStateException("Timer service must be set.");
-		}
 		
 		
 		if (getIsExecuting()) {
@@ -95,11 +92,11 @@ public class RobotStatemachine implements IStatemachine, ITimed {
 		front = false;
 		frontL = false;
 		frontR = false;
+		virtualWall = false;
 		back = false;
 		lTS = false;
 		rTS = false;
 		clear = false;
-		timeEvents[0] = false;
 	}
 	
 	private void microStep() {
@@ -107,14 +104,17 @@ public class RobotStatemachine implements IStatemachine, ITimed {
 		case MAIN_REGION_MOVING:
 			main_region_MOVING_react(-1);
 			break;
-		case MAIN_REGION_RIGHT_BLOCKED:
-			main_region_RIGHT_BLOCKED_react(-1);
-			break;
 		case MAIN_REGION_BLOCKED:
 			main_region_BLOCKED_react(-1);
 			break;
-		case MAIN_REGION_LEFT_BLOCKED:
-			main_region_LEFT_BLOCKED_react(-1);
+		case MAIN_REGION_VIRTUAL_WALL:
+			main_region_VIRTUAL_WALL_react(-1);
+			break;
+		case MAIN_REGION_PARTIALY_BLOCKED_R1_LEFT_BLOCKED:
+			main_region_PARTIALY_BLOCKED_r1_LEFT_BLOCKED_react(-1);
+			break;
+		case MAIN_REGION_PARTIALY_BLOCKED_R1_RIGHT_BLOCKED:
+			main_region_PARTIALY_BLOCKED_r1_RIGHT_BLOCKED_react(-1);
 			break;
 		default:
 			break;
@@ -122,9 +122,6 @@ public class RobotStatemachine implements IStatemachine, ITimed {
 	}
 	
 	private void runCycle() {
-		if (timerService == null) {
-			throw new IllegalStateException("Timer service must be set.");
-		}
 		
 		
 		if (getIsExecuting()) {
@@ -139,7 +136,7 @@ public class RobotStatemachine implements IStatemachine, ITimed {
 			clearInEvents();
 			
 			nextEvent();
-		} while ((((((((front || frontL) || frontR) || back) || lTS) || rTS) || clear) || timeEvents[0]));
+		} while ((((((((front || frontL) || frontR) || virtualWall) || back) || lTS) || rTS) || clear));
 		
 		isExecuting = false;
 	}
@@ -158,30 +155,20 @@ public class RobotStatemachine implements IStatemachine, ITimed {
 		switch (state) {
 		case MAIN_REGION_MOVING:
 			return stateVector[0] == State.MAIN_REGION_MOVING;
-		case MAIN_REGION_RIGHT_BLOCKED:
-			return stateVector[0] == State.MAIN_REGION_RIGHT_BLOCKED;
 		case MAIN_REGION_BLOCKED:
 			return stateVector[0] == State.MAIN_REGION_BLOCKED;
-		case MAIN_REGION_LEFT_BLOCKED:
-			return stateVector[0] == State.MAIN_REGION_LEFT_BLOCKED;
+		case MAIN_REGION_VIRTUAL_WALL:
+			return stateVector[0] == State.MAIN_REGION_VIRTUAL_WALL;
+		case MAIN_REGION_PARTIALY_BLOCKED:
+			return stateVector[0].ordinal() >= State.
+					MAIN_REGION_PARTIALY_BLOCKED.ordinal()&& stateVector[0].ordinal() <= State.MAIN_REGION_PARTIALY_BLOCKED_R1_RIGHT_BLOCKED.ordinal();
+		case MAIN_REGION_PARTIALY_BLOCKED_R1_LEFT_BLOCKED:
+			return stateVector[0] == State.MAIN_REGION_PARTIALY_BLOCKED_R1_LEFT_BLOCKED;
+		case MAIN_REGION_PARTIALY_BLOCKED_R1_RIGHT_BLOCKED:
+			return stateVector[0] == State.MAIN_REGION_PARTIALY_BLOCKED_R1_RIGHT_BLOCKED;
 		default:
 			return false;
 		}
-	}
-	
-	public synchronized void setTimerService(ITimerService timerService) {
-		this.timerService = timerService;
-	}
-	
-	public ITimerService getTimerService() {
-		return timerService;
-	}
-	
-	public synchronized void raiseTimeEvent(int eventID) {
-		inEventQueue.add(() -> {
-			timeEvents[eventID] = true;
-		});
-		runCycle();
 	}
 	
 	
@@ -216,6 +203,18 @@ public class RobotStatemachine implements IStatemachine, ITimed {
 		synchronized(RobotStatemachine.this) {
 			inEventQueue.add(() -> {
 				frontR = true;
+			});
+			runCycle();
+		}
+	}
+	
+	private boolean virtualWall;
+	
+	
+	public void raiseVirtualWall() {
+		synchronized(RobotStatemachine.this) {
+			inEventQueue.add(() -> {
+				virtualWall = true;
 			});
 			runCycle();
 		}
@@ -419,14 +418,7 @@ public class RobotStatemachine implements IStatemachine, ITimed {
 	
 	/* Entry action for state 'MOVING'. */
 	private void entryAction_main_region_MOVING() {
-		timerService.setTimer(this, 0, (1 * 1000), true);
-	}
-	
-	/* Entry action for state 'RIGHT_BLOCKED'. */
-	private void entryAction_main_region_RIGHT_BLOCKED() {
-		raiseDoGoBackward();
-		
-		raiseDoTurnRandomlyLeft();
+		raiseDoGoForward();
 	}
 	
 	/* Entry action for state 'BLOCKED'. */
@@ -434,16 +426,23 @@ public class RobotStatemachine implements IStatemachine, ITimed {
 		raiseDoFullTurn();
 	}
 	
+	/* Entry action for state 'VIRTUAL_WALL'. */
+	private void entryAction_main_region_VIRTUAL_WALL() {
+		raiseDoFullTurn();
+	}
+	
 	/* Entry action for state 'LEFT_BLOCKED'. */
-	private void entryAction_main_region_LEFT_BLOCKED() {
+	private void entryAction_main_region_PARTIALY_BLOCKED_r1_LEFT_BLOCKED() {
 		raiseDoGoBackward();
 		
 		raiseDoTurnRandomlyRight();
 	}
 	
-	/* Exit action for state 'MOVING'. */
-	private void exitAction_main_region_MOVING() {
-		timerService.unsetTimer(this, 0);
+	/* Entry action for state 'RIGHT_BLOCKED'. */
+	private void entryAction_main_region_PARTIALY_BLOCKED_r1_RIGHT_BLOCKED() {
+		raiseDoGoBackward();
+		
+		raiseDoTurnRandomlyLeft();
 	}
 	
 	/* 'default' enter sequence for state MOVING */
@@ -452,22 +451,37 @@ public class RobotStatemachine implements IStatemachine, ITimed {
 		stateVector[0] = State.MAIN_REGION_MOVING;
 	}
 	
-	/* 'default' enter sequence for state RIGHT_BLOCKED */
-	private void enterSequence_main_region_RIGHT_BLOCKED_default() {
-		entryAction_main_region_RIGHT_BLOCKED();
-		stateVector[0] = State.MAIN_REGION_RIGHT_BLOCKED;
-	}
-	
 	/* 'default' enter sequence for state BLOCKED */
 	private void enterSequence_main_region_BLOCKED_default() {
 		entryAction_main_region_BLOCKED();
 		stateVector[0] = State.MAIN_REGION_BLOCKED;
 	}
 	
+	/* 'default' enter sequence for state VIRTUAL_WALL */
+	private void enterSequence_main_region_VIRTUAL_WALL_default() {
+		entryAction_main_region_VIRTUAL_WALL();
+		stateVector[0] = State.MAIN_REGION_VIRTUAL_WALL;
+	}
+	
+	/* 'default' enter sequence for state PARTIALY_BLOCKED */
+	private void enterSequence_main_region_PARTIALY_BLOCKED_default() {
+		enterSequence_main_region_PARTIALY_BLOCKED_r1_default();
+	}
+	
 	/* 'default' enter sequence for state LEFT_BLOCKED */
-	private void enterSequence_main_region_LEFT_BLOCKED_default() {
-		entryAction_main_region_LEFT_BLOCKED();
-		stateVector[0] = State.MAIN_REGION_LEFT_BLOCKED;
+	private void enterSequence_main_region_PARTIALY_BLOCKED_r1_LEFT_BLOCKED_default() {
+		entryAction_main_region_PARTIALY_BLOCKED_r1_LEFT_BLOCKED();
+		stateVector[0] = State.MAIN_REGION_PARTIALY_BLOCKED_R1_LEFT_BLOCKED;
+		
+		historyVector[0] = stateVector[0];
+	}
+	
+	/* 'default' enter sequence for state RIGHT_BLOCKED */
+	private void enterSequence_main_region_PARTIALY_BLOCKED_r1_RIGHT_BLOCKED_default() {
+		entryAction_main_region_PARTIALY_BLOCKED_r1_RIGHT_BLOCKED();
+		stateVector[0] = State.MAIN_REGION_PARTIALY_BLOCKED_R1_RIGHT_BLOCKED;
+		
+		historyVector[0] = stateVector[0];
 	}
 	
 	/* 'default' enter sequence for region main region */
@@ -475,15 +489,27 @@ public class RobotStatemachine implements IStatemachine, ITimed {
 		react_main_region__entry_Default();
 	}
 	
-	/* Default exit sequence for state MOVING */
-	private void exitSequence_main_region_MOVING() {
-		stateVector[0] = State.$NULLSTATE$;
-		
-		exitAction_main_region_MOVING();
+	/* 'default' enter sequence for region r1 */
+	private void enterSequence_main_region_PARTIALY_BLOCKED_r1_default() {
+		react_main_region_PARTIALY_BLOCKED_r1__entry_Default();
 	}
 	
-	/* Default exit sequence for state RIGHT_BLOCKED */
-	private void exitSequence_main_region_RIGHT_BLOCKED() {
+	/* deep enterSequence with history in child r1 */
+	private void deepEnterSequence_main_region_PARTIALY_BLOCKED_r1() {
+		switch (historyVector[0]) {
+		case MAIN_REGION_PARTIALY_BLOCKED_R1_LEFT_BLOCKED:
+			enterSequence_main_region_PARTIALY_BLOCKED_r1_LEFT_BLOCKED_default();
+			break;
+		case MAIN_REGION_PARTIALY_BLOCKED_R1_RIGHT_BLOCKED:
+			enterSequence_main_region_PARTIALY_BLOCKED_r1_RIGHT_BLOCKED_default();
+			break;
+		default:
+			break;
+		}
+	}
+	
+	/* Default exit sequence for state MOVING */
+	private void exitSequence_main_region_MOVING() {
 		stateVector[0] = State.$NULLSTATE$;
 	}
 	
@@ -492,8 +518,23 @@ public class RobotStatemachine implements IStatemachine, ITimed {
 		stateVector[0] = State.$NULLSTATE$;
 	}
 	
+	/* Default exit sequence for state VIRTUAL_WALL */
+	private void exitSequence_main_region_VIRTUAL_WALL() {
+		stateVector[0] = State.$NULLSTATE$;
+	}
+	
+	/* Default exit sequence for state PARTIALY_BLOCKED */
+	private void exitSequence_main_region_PARTIALY_BLOCKED() {
+		exitSequence_main_region_PARTIALY_BLOCKED_r1();
+	}
+	
 	/* Default exit sequence for state LEFT_BLOCKED */
-	private void exitSequence_main_region_LEFT_BLOCKED() {
+	private void exitSequence_main_region_PARTIALY_BLOCKED_r1_LEFT_BLOCKED() {
+		stateVector[0] = State.$NULLSTATE$;
+	}
+	
+	/* Default exit sequence for state RIGHT_BLOCKED */
+	private void exitSequence_main_region_PARTIALY_BLOCKED_r1_RIGHT_BLOCKED() {
 		stateVector[0] = State.$NULLSTATE$;
 	}
 	
@@ -503,14 +544,31 @@ public class RobotStatemachine implements IStatemachine, ITimed {
 		case MAIN_REGION_MOVING:
 			exitSequence_main_region_MOVING();
 			break;
-		case MAIN_REGION_RIGHT_BLOCKED:
-			exitSequence_main_region_RIGHT_BLOCKED();
-			break;
 		case MAIN_REGION_BLOCKED:
 			exitSequence_main_region_BLOCKED();
 			break;
-		case MAIN_REGION_LEFT_BLOCKED:
-			exitSequence_main_region_LEFT_BLOCKED();
+		case MAIN_REGION_VIRTUAL_WALL:
+			exitSequence_main_region_VIRTUAL_WALL();
+			break;
+		case MAIN_REGION_PARTIALY_BLOCKED_R1_LEFT_BLOCKED:
+			exitSequence_main_region_PARTIALY_BLOCKED_r1_LEFT_BLOCKED();
+			break;
+		case MAIN_REGION_PARTIALY_BLOCKED_R1_RIGHT_BLOCKED:
+			exitSequence_main_region_PARTIALY_BLOCKED_r1_RIGHT_BLOCKED();
+			break;
+		default:
+			break;
+		}
+	}
+	
+	/* Default exit sequence for region r1 */
+	private void exitSequence_main_region_PARTIALY_BLOCKED_r1() {
+		switch (stateVector[0]) {
+		case MAIN_REGION_PARTIALY_BLOCKED_R1_LEFT_BLOCKED:
+			exitSequence_main_region_PARTIALY_BLOCKED_r1_LEFT_BLOCKED();
+			break;
+		case MAIN_REGION_PARTIALY_BLOCKED_R1_RIGHT_BLOCKED:
+			exitSequence_main_region_PARTIALY_BLOCKED_r1_RIGHT_BLOCKED();
 			break;
 		default:
 			break;
@@ -522,6 +580,16 @@ public class RobotStatemachine implements IStatemachine, ITimed {
 		enterSequence_main_region_MOVING_default();
 	}
 	
+	/* Default react sequence for deep history entry  */
+	private void react_main_region_PARTIALY_BLOCKED_r1__entry_Default() {
+		/* Enter the region with deep history */
+		if (historyVector[0] != State.$NULLSTATE$) {
+			deepEnterSequence_main_region_PARTIALY_BLOCKED_r1();
+		} else {
+			enterSequence_main_region_PARTIALY_BLOCKED_r1_LEFT_BLOCKED_default();
+		}
+	}
+	
 	private long react(long transitioned_before) {
 		return transitioned_before;
 	}
@@ -530,57 +598,43 @@ public class RobotStatemachine implements IStatemachine, ITimed {
 		long transitioned_after = transitioned_before;
 		
 		if (transitioned_after<0) {
-			if (frontR) {
+			if (virtualWall) {
 				exitSequence_main_region_MOVING();
-				enterSequence_main_region_RIGHT_BLOCKED_default();
+				enterSequence_main_region_VIRTUAL_WALL_default();
 				react(0);
 				
 				transitioned_after = 0;
 			} else {
-				if (front) {
+				if (clear) {
 					exitSequence_main_region_MOVING();
-					enterSequence_main_region_RIGHT_BLOCKED_default();
+					enterSequence_main_region_MOVING_default();
 					react(0);
 					
 					transitioned_after = 0;
 				} else {
 					if (frontL) {
 						exitSequence_main_region_MOVING();
-						enterSequence_main_region_LEFT_BLOCKED_default();
+						enterSequence_main_region_PARTIALY_BLOCKED_r1_LEFT_BLOCKED_default();
 						react(0);
 						
 						transitioned_after = 0;
+					} else {
+						if (frontR) {
+							exitSequence_main_region_MOVING();
+							enterSequence_main_region_PARTIALY_BLOCKED_r1_RIGHT_BLOCKED_default();
+							react(0);
+							
+							transitioned_after = 0;
+						} else {
+							if (front) {
+								exitSequence_main_region_MOVING();
+								enterSequence_main_region_PARTIALY_BLOCKED_r1_RIGHT_BLOCKED_default();
+								react(0);
+								
+								transitioned_after = 0;
+							}
+						}
 					}
-				}
-			}
-		}
-		/* If no transition was taken then execute local reactions */
-		if (transitioned_after==transitioned_before) {
-			if (timeEvents[0]) {
-				raiseDoGoForward();
-			}
-			transitioned_after = react(transitioned_before);
-		}
-		return transitioned_after;
-	}
-	
-	private long main_region_RIGHT_BLOCKED_react(long transitioned_before) {
-		long transitioned_after = transitioned_before;
-		
-		if (transitioned_after<0) {
-			if (frontL) {
-				exitSequence_main_region_RIGHT_BLOCKED();
-				enterSequence_main_region_BLOCKED_default();
-				react(0);
-				
-				transitioned_after = 0;
-			} else {
-				if (clear) {
-					exitSequence_main_region_RIGHT_BLOCKED();
-					enterSequence_main_region_MOVING_default();
-					react(0);
-					
-					transitioned_after = 0;
 				}
 			}
 		}
@@ -610,30 +664,65 @@ public class RobotStatemachine implements IStatemachine, ITimed {
 		return transitioned_after;
 	}
 	
-	private long main_region_LEFT_BLOCKED_react(long transitioned_before) {
+	private long main_region_VIRTUAL_WALL_react(long transitioned_before) {
 		long transitioned_after = transitioned_before;
 		
 		if (transitioned_after<0) {
-			if (frontR) {
-				exitSequence_main_region_LEFT_BLOCKED();
-				enterSequence_main_region_BLOCKED_default();
+			if (clear) {
+				exitSequence_main_region_VIRTUAL_WALL();
+				enterSequence_main_region_MOVING_default();
 				react(0);
 				
 				transitioned_after = 0;
 			} else {
-				if (front) {
-					exitSequence_main_region_LEFT_BLOCKED();
-					enterSequence_main_region_BLOCKED_default();
+				if (virtualWall) {
+					exitSequence_main_region_VIRTUAL_WALL();
+					enterSequence_main_region_VIRTUAL_WALL_default();
+					react(0);
+					
+					transitioned_after = 0;
+				}
+			}
+		}
+		/* If no transition was taken then execute local reactions */
+		if (transitioned_after==transitioned_before) {
+			transitioned_after = react(transitioned_before);
+		}
+		return transitioned_after;
+	}
+	
+	private long main_region_PARTIALY_BLOCKED_react(long transitioned_before) {
+		long transitioned_after = transitioned_before;
+		
+		if (transitioned_after<0) {
+			if (clear) {
+				exitSequence_main_region_PARTIALY_BLOCKED();
+				enterSequence_main_region_MOVING_default();
+				react(0);
+				
+				transitioned_after = 0;
+			} else {
+				if (frontR) {
+					exitSequence_main_region_PARTIALY_BLOCKED();
+					enterSequence_main_region_PARTIALY_BLOCKED_default();
 					react(0);
 					
 					transitioned_after = 0;
 				} else {
-					if (clear) {
-						exitSequence_main_region_LEFT_BLOCKED();
-						enterSequence_main_region_MOVING_default();
+					if (frontL) {
+						exitSequence_main_region_PARTIALY_BLOCKED();
+						enterSequence_main_region_PARTIALY_BLOCKED_default();
 						react(0);
 						
 						transitioned_after = 0;
+					} else {
+						if (front) {
+							exitSequence_main_region_PARTIALY_BLOCKED();
+							enterSequence_main_region_PARTIALY_BLOCKED_default();
+							react(0);
+							
+							transitioned_after = 0;
+						}
 					}
 				}
 			}
@@ -641,6 +730,52 @@ public class RobotStatemachine implements IStatemachine, ITimed {
 		/* If no transition was taken then execute local reactions */
 		if (transitioned_after==transitioned_before) {
 			transitioned_after = react(transitioned_before);
+		}
+		return transitioned_after;
+	}
+	
+	private long main_region_PARTIALY_BLOCKED_r1_LEFT_BLOCKED_react(long transitioned_before) {
+		long transitioned_after = transitioned_before;
+		
+		if (transitioned_after<0) {
+			if (frontR) {
+				exitSequence_main_region_PARTIALY_BLOCKED();
+				enterSequence_main_region_BLOCKED_default();
+				react(0);
+				
+				transitioned_after = 0;
+			} else {
+				if (front) {
+					exitSequence_main_region_PARTIALY_BLOCKED();
+					enterSequence_main_region_BLOCKED_default();
+					react(0);
+					
+					transitioned_after = 0;
+				}
+			}
+		}
+		/* If no transition was taken then execute local reactions */
+		if (transitioned_after==transitioned_before) {
+			transitioned_after = main_region_PARTIALY_BLOCKED_react(transitioned_before);
+		}
+		return transitioned_after;
+	}
+	
+	private long main_region_PARTIALY_BLOCKED_r1_RIGHT_BLOCKED_react(long transitioned_before) {
+		long transitioned_after = transitioned_before;
+		
+		if (transitioned_after<0) {
+			if (frontL) {
+				exitSequence_main_region_PARTIALY_BLOCKED();
+				enterSequence_main_region_BLOCKED_default();
+				react(0);
+				
+				transitioned_after = 0;
+			}
+		}
+		/* If no transition was taken then execute local reactions */
+		if (transitioned_after==transitioned_before) {
+			transitioned_after = main_region_PARTIALY_BLOCKED_react(transitioned_before);
 		}
 		return transitioned_after;
 	}

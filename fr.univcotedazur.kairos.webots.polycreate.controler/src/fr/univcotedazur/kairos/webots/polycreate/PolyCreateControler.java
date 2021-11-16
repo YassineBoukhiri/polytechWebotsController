@@ -184,8 +184,9 @@ public class PolyCreateControler extends Supervisor {
 		/*
 		 * Start the robot
 		 */
-		TimerService timer = new TimerService();
+		/*TimerService timer = new TimerService();
 		fsm.setTimerService(timer);
+		*/
 		fsm.enter();
 		
 	}
@@ -193,16 +194,16 @@ public class PolyCreateControler extends Supervisor {
 	public void listen(){
 		if (isThereVirtualwall()) {
 			System.out.println("Virtual wall detected\n");
-			fsm.raiseFrontR();
-			fsm.raiseFront();
-			fsm.raiseFrontL();
-		} else if (isThereCollisionAtLeft() || frontLeftDistanceSensor.getValue() < 250) {
+			fsm.raiseVirtualWall();
+		} else  if (isThereCollisionAtLeft() || frontLeftDistanceSensor.getValue() < 250) {
 			System.out.println("          Left obstacle detected\n");
 			fsm.raiseFrontL();
+			passiveWait(0.5);
 		} else if (isThereCollisionAtRight() || frontRightDistanceSensor.getValue() < 250 ||frontDistanceSensor.getValue() < 250) {
 			System.out.println("          Right obstacle detected\n");
 			fsm.raiseFrontR();
 			fsm.raiseFront();
+			passiveWait(0.5);
 		} else {
 			fsm.raiseClear();
 		}
@@ -217,7 +218,7 @@ public class PolyCreateControler extends Supervisor {
 	}
 
 	public void doTurnRandomlyLeft() {
-		turn(-Math.PI * this.randdouble() + 0.6);
+		turn(-Math.PI * this.randdouble() - 0.6);
 	}
 
 	public void doTurnRandomlyRight() {
