@@ -36,17 +36,24 @@ import fr.univcotedazur.kairos.webots.polycreate.controler.RobotStatemachine;
 
 
 public class PolyCreateControler extends Supervisor {
+	
+	
 
 	public RobotStatemachine fsm;
 
+	
+	
 	static int MAX_SPEED = 16;
 	static int NULL_SPEED = 0;
 	static int HALF_SPEED = 8;
 	static int MIN_SPEED = -16;
 
-	static double WHEEL_RADIUS = 0.031;
-	static double AXLE_LENGTH = 0.271756;
+	
+	static double WHEEL_RADIUS = 0.0242; //0.0242; // 0.031
+	static double AXLE_LENGTH =  0.271756;
 	static double ENCODER_RESOLUTION = 507.9188;
+	
+	static int EDGE = 2;
 
 	/**
 	 * the inkEvaporation parameter in the WorldInfo element of the robot scene may
@@ -65,6 +72,7 @@ public class PolyCreateControler extends Supervisor {
 	public Motor rightMotor = null;
 
 	public PositionSensor leftSensor = null;
+	
 	public PositionSensor rightSensor = null;
 
 	public LED ledOn = null;
@@ -191,6 +199,11 @@ public class PolyCreateControler extends Supervisor {
 		
 	}
 
+	public double getOrientation() {
+		return Math.atan2(getSelf().getOrientation()[0],
+				 getSelf().getOrientation()[8]);
+	}
+	
 	public void listen(){
 		if (isThereVirtualwall()) {
 			System.out.println("Virtual wall detected\n");
@@ -208,6 +221,67 @@ public class PolyCreateControler extends Supervisor {
 			fsm.raiseClear();
 		}
 	}
+	
+    public void goLine(int length) {
+    	long t= System.currentTimeMillis();
+		long end = t+ 1000 * length;
+		System.out.println("Going without drawing");
+		
+		while(System.currentTimeMillis() < end) {
+			goForward();
+			passiveWait(0.5);
+			System.out.println("Going in process");
+		}
+		stop();
+		passiveWait(0.5);
+    }
+        
+	
+	public void drawLine(int length) {
+		long t= System.currentTimeMillis();
+		long end = t+ 1000 * length;
+		System.out.println("Drawing a line");
+		
+		while(System.currentTimeMillis() < end) {
+			goForward();
+			passiveWait(0.5);
+			System.out.println("Drawing a line in process");
+		}
+		stop();
+		passiveWait(0.5);
+
+	}
+	
+	public void write0() {
+        drawLine(2*EDGE);
+        turnRight();
+        drawLine(EDGE);
+        turnRight();
+        drawLine(2*EDGE);
+        turnRight();
+        drawLine(EDGE);
+        // going to bottom right corner
+        doFullTurn();
+        goLine(EDGE);
+    }
+	
+	
+	public void turnLeft() {
+		System.out.println("Turning left");
+		turn(Math.PI/2 );
+		
+	}
+	
+	public void turnRight() {
+		System.out.println("Turning right");
+		turn(-Math.PI/2 );
+	}
+	 
+	public void writeLetter(char c) /* throws Exception */ {
+		//if (c<'a' || c > 'z') throw new Exception("You can only write lowercase letters");
+		if (c == 'a') System.out.print("Ok");
+		else System.out.print("Problem");
+	}
 
 	public void doOpenGripper() {
 		openGripper();
@@ -218,11 +292,11 @@ public class PolyCreateControler extends Supervisor {
 	}
 
 	public void doTurnRandomlyLeft() {
-		turn(-Math.PI * this.randdouble() - 0.6);
+		turn(Math.PI * this.randdouble() + 0.6);
 	}
 
 	public void doTurnRandomlyRight() {
-		turn(Math.PI * this.randdouble() + 0.6);
+		turn(-Math.PI * this.randdouble() - 0.6);
 	}
 
 	public void doFullTurn() {
@@ -336,14 +410,39 @@ public class PolyCreateControler extends Supervisor {
 	public double[] getPosition() {
 		return gps.getValues();
 	}
+	
+	public void myTurn(double angle) {
+		stop();
+		step(timestep);
+		double goal = angle - getOrientation();
+		while(angle
+	}
 
 	public static void main(String[] args) {
 		PolyCreateControler controler = new PolyCreateControler();
-		controler.openGripper();
-		while (true) {
-			controler.passiveWait(0.1);
-			controler.listen();
-		}
+		/*System.out.print(controler.getOrientiation());
+		controler.drawLine(EDGE);
+		System.out.print(controler.getOrientiation());
+*/
+		//controler.openGripper();
+		
+		controler.pen.write(true);
+		controler.drawLine(2*EDGE);
+		controler.turnLeft();
+		controler.drawLine(EDGE);
+		controler.turnLeft();
+		controler.drawLine(2*EDGE);
+		controler.turnLeft();
+		controler.drawLine(EDGE);
+		//controler.write0();
+		//controler.drawLine(EDGE);
+		//controler.turnLeft();
+		//controler.doFullTurn();
+		
+
+		
+		//controler.writeLetter('a');
+		
 	}
 
 	// public static void main(String[] args) {

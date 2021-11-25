@@ -14,6 +14,7 @@ public class RobotStatemachine implements IStatemachine {
 		MAIN_REGION_PARTIALY_BLOCKED,
 		MAIN_REGION_PARTIALY_BLOCKED_R1_LEFT_BLOCKED,
 		MAIN_REGION_PARTIALY_BLOCKED_R1_RIGHT_BLOCKED,
+		MAIN_REGION_DO_NOTHING,
 		$NULLSTATE$
 	};
 	
@@ -116,6 +117,9 @@ public class RobotStatemachine implements IStatemachine {
 		case MAIN_REGION_PARTIALY_BLOCKED_R1_RIGHT_BLOCKED:
 			main_region_PARTIALY_BLOCKED_r1_RIGHT_BLOCKED_react(-1);
 			break;
+		case MAIN_REGION_DO_NOTHING:
+			main_region_DO_NOTHING_react(-1);
+			break;
 		default:
 			break;
 		}
@@ -166,6 +170,8 @@ public class RobotStatemachine implements IStatemachine {
 			return stateVector[0] == State.MAIN_REGION_PARTIALY_BLOCKED_R1_LEFT_BLOCKED;
 		case MAIN_REGION_PARTIALY_BLOCKED_R1_RIGHT_BLOCKED:
 			return stateVector[0] == State.MAIN_REGION_PARTIALY_BLOCKED_R1_RIGHT_BLOCKED;
+		case MAIN_REGION_DO_NOTHING:
+			return stateVector[0] == State.MAIN_REGION_DO_NOTHING;
 		default:
 			return false;
 		}
@@ -484,6 +490,11 @@ public class RobotStatemachine implements IStatemachine {
 		historyVector[0] = stateVector[0];
 	}
 	
+	/* 'default' enter sequence for state DO_NOTHING */
+	private void enterSequence_main_region_DO_NOTHING_default() {
+		stateVector[0] = State.MAIN_REGION_DO_NOTHING;
+	}
+	
 	/* 'default' enter sequence for region main region */
 	private void enterSequence_main_region_default() {
 		react_main_region__entry_Default();
@@ -538,6 +549,11 @@ public class RobotStatemachine implements IStatemachine {
 		stateVector[0] = State.$NULLSTATE$;
 	}
 	
+	/* Default exit sequence for state DO_NOTHING */
+	private void exitSequence_main_region_DO_NOTHING() {
+		stateVector[0] = State.$NULLSTATE$;
+	}
+	
 	/* Default exit sequence for region main region */
 	private void exitSequence_main_region() {
 		switch (stateVector[0]) {
@@ -555,6 +571,9 @@ public class RobotStatemachine implements IStatemachine {
 			break;
 		case MAIN_REGION_PARTIALY_BLOCKED_R1_RIGHT_BLOCKED:
 			exitSequence_main_region_PARTIALY_BLOCKED_r1_RIGHT_BLOCKED();
+			break;
+		case MAIN_REGION_DO_NOTHING:
+			exitSequence_main_region_DO_NOTHING();
 			break;
 		default:
 			break;
@@ -575,11 +594,6 @@ public class RobotStatemachine implements IStatemachine {
 		}
 	}
 	
-	/* Default react sequence for initial entry  */
-	private void react_main_region__entry_Default() {
-		enterSequence_main_region_MOVING_default();
-	}
-	
 	/* Default react sequence for deep history entry  */
 	private void react_main_region_PARTIALY_BLOCKED_r1__entry_Default() {
 		/* Enter the region with deep history */
@@ -588,6 +602,11 @@ public class RobotStatemachine implements IStatemachine {
 		} else {
 			enterSequence_main_region_PARTIALY_BLOCKED_r1_LEFT_BLOCKED_default();
 		}
+	}
+	
+	/* Default react sequence for initial entry  */
+	private void react_main_region__entry_Default() {
+		enterSequence_main_region_DO_NOTHING_default();
 	}
 	
 	private long react(long transitioned_before) {
@@ -776,6 +795,18 @@ public class RobotStatemachine implements IStatemachine {
 		/* If no transition was taken then execute local reactions */
 		if (transitioned_after==transitioned_before) {
 			transitioned_after = main_region_PARTIALY_BLOCKED_react(transitioned_before);
+		}
+		return transitioned_after;
+	}
+	
+	private long main_region_DO_NOTHING_react(long transitioned_before) {
+		long transitioned_after = transitioned_before;
+		
+		if (transitioned_after<0) {
+		}
+		/* If no transition was taken then execute local reactions */
+		if (transitioned_after==transitioned_before) {
+			transitioned_after = react(transitioned_before);
 		}
 		return transitioned_after;
 	}
