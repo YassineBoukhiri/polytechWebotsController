@@ -180,6 +180,7 @@ public class PolyCreateControler extends Supervisor {
 		fsm.getDoCloseGripper().subscribe(new DoCloseGripperObserver(this));
 		fsm.getDoGoForward().subscribe(new DoGoForwardObserver(this));
 		fsm.getDoGoBackward().subscribe(new DoGoBackwardObserver(this));
+		fsm.getDoGoTo().subscribe(new DoGoToObserver(this));
 
 		/*
 		 * Start the robot
@@ -192,6 +193,7 @@ public class PolyCreateControler extends Supervisor {
 	}
 
 	public void listen(){
+		CameraRecognitionObject[] backObjs = this.backCamera.getRecognitionObjects();
 		if (isThereVirtualwall()) {
 			System.out.println("Virtual wall detected\n");
 			fsm.raiseVirtualWall();
@@ -207,6 +209,9 @@ public class PolyCreateControler extends Supervisor {
 		} else {
 			fsm.raiseClear();
 		}
+		if (backObjs.length > 0) {
+			fsm.raiseGoTo();
+		}
 	}
 
 	public void doOpenGripper() {
@@ -218,11 +223,11 @@ public class PolyCreateControler extends Supervisor {
 	}
 
 	public void doTurnRandomlyLeft() {
-		turn(-Math.PI * this.randdouble() - 0.6);
+		turn(Math.PI * this.randdouble() + 0.6);
 	}
 
 	public void doTurnRandomlyRight() {
-		turn(Math.PI * this.randdouble() + 0.6);
+		turn(-Math.PI * this.randdouble() - 0.6);
 	}
 
 	public void doFullTurn() {
@@ -320,6 +325,33 @@ public class PolyCreateControler extends Supervisor {
 		stop();
 		step(timestep);
 	}
+	
+	public void doGoTo() {
+		if(this.getObjectDistanceToGripper() > 130) {
+			this.goBackward();
+			CameraRecognitionObject[] backObjs = this.backCamera.getRecognitionObjects();
+			CameraRecognitionObject obj = backObjs[0];
+			int oid = obj.getId();
+			Node obj2 = this.getFromId(oid);
+			double[] backObjPos = obj.getPosition();
+			/*
+			* The position and orientation are expressed relatively to the camera (the
+			relative position is the one of the center of the object which can differ
+			from its origin) and the units are meter and radian.
+			*/
+			System.out.println(" I saw an object on back Camera at :"+backObjPos[0]+","+backObjPos[1]);
+			System.out.println(" gripper distance sensor is "+this.getObjectDistanceToGripper());
+			System.out.println("test image size "+ obj.getSize()[0]+" , "+ obj.getSize()[1]);
+			System.out.println("-> the orientation of the robot is "+Math.atan2(this.getSelf().getOrientation()[0],this.getSelf().getOrientation()[8]));
+			System.out.println(" the position of the robot is "+Math.round(this.getSelf().getPosition()[0]*100)+";"+Math.round(this.getSelf().getPosition()[2]*100));
+		}
+		else {
+			this.stop();
+			this.closeGripper();
+			this.passiveWait(0.2);
+			fsm.raiseGotIt();
+		}
+	}
 
 	/**
 	 * The values are returned as a 3D-vector, therefore only the indices 0, 1, and
@@ -344,11 +376,12 @@ public class PolyCreateControler extends Supervisor {
 			controler.passiveWait(0.1);
 			controler.listen();
 		}
+		
 	}
 
 	// public static void main(String[] args) {
 	// PolyCreateControler controler = new PolyCreateControler();
-
+	
 	// try {
 	// controler.openGripper();
 	// controler.pen.write(true);
