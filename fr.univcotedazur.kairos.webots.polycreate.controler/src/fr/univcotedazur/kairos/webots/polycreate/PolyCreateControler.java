@@ -193,7 +193,7 @@ public class PolyCreateControler extends Supervisor {
 	}
 
 	public void listen(){
-		CameraRecognitionObject[] backObjs = this.backCamera.getRecognitionObjects();
+		CameraRecognitionObject[] backObjs = this.frontCamera.getRecognitionObjects();
 		if (isThereVirtualwall()) {
 			System.out.println("Virtual wall detected\n");
 			fsm.raiseVirtualWall();
@@ -332,7 +332,7 @@ public class PolyCreateControler extends Supervisor {
 	
 	
 	public void doGoTo() {
-		CameraRecognitionObject[] backObjs = this.backCamera.getRecognitionObjects();
+		CameraRecognitionObject[] backObjs = this.frontCamera.getRecognitionObjects();
 		CameraRecognitionObject obj = backObjs[0];
 		int oid = obj.getId();
 		Node obj2 = this.getFromId(oid);
@@ -341,13 +341,21 @@ public class PolyCreateControler extends Supervisor {
 		double y = backObjPos[1];
 		System.out.println(Math.atan(x/y*Math.PI/180));
 		turn(Math.atan(x/y*Math.PI/180));
-		if(this.getObjectDistanceToGripper() > 130) {
+		goForward();
+		System.out.println("value"+frontDistanceSensor.getValue());
+		if(frontDistanceSensor.getValue() < 500) {
+			stop();
+			turn(Math.PI);
+		}
+			
+		/*if(this.getObjectDistanceToGripper() > 129) {
 			goBackward();
 			/*
-			* The position and orientation are expressed relatively to the camera (the
+			/* The position and orientation are expressed relatively to the camera (the
 			relative position is the one of the center of the object which can differ
 			from its origin) and the units are meter and radian.
 			*/
+		/*
 			System.out.println(" I saw an object on back Camera at :"+backObjPos[0]*100+","+backObjPos[1]*100);
 			System.out.println(" gripper distance sensor is "+this.getObjectDistanceToGripper());
 			System.out.println("-> the orientation of the robot is "+Math.atan2(this.getSelf().getOrientation()[0],this.getSelf().getOrientation()[8]));
@@ -358,7 +366,8 @@ public class PolyCreateControler extends Supervisor {
 			this.closeGripper();
 			this.passiveWait(0.2);
 			fsm.raiseGotIt();
-		}
+			//backCamera.recognitionDisable();
+		}*/
 	}
 
 	/**
