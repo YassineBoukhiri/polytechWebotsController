@@ -326,22 +326,30 @@ public class PolyCreateControler extends Supervisor {
 		step(timestep);
 	}
 	
+	
+	
+	
+	
+	
 	public void doGoTo() {
+		CameraRecognitionObject[] backObjs = this.backCamera.getRecognitionObjects();
+		CameraRecognitionObject obj = backObjs[0];
+		int oid = obj.getId();
+		Node obj2 = this.getFromId(oid);
+		double[] backObjPos = obj.getPosition();
+		double x = backObjPos[0];
+		double y = backObjPos[1];
+		System.out.println(Math.atan(x/y*Math.PI/180));
+		turn(Math.atan(x/y*Math.PI/180));
 		if(this.getObjectDistanceToGripper() > 130) {
-			this.goBackward();
-			CameraRecognitionObject[] backObjs = this.backCamera.getRecognitionObjects();
-			CameraRecognitionObject obj = backObjs[0];
-			int oid = obj.getId();
-			Node obj2 = this.getFromId(oid);
-			double[] backObjPos = obj.getPosition();
+			goBackward();
 			/*
 			* The position and orientation are expressed relatively to the camera (the
 			relative position is the one of the center of the object which can differ
 			from its origin) and the units are meter and radian.
 			*/
-			System.out.println(" I saw an object on back Camera at :"+backObjPos[0]+","+backObjPos[1]);
+			System.out.println(" I saw an object on back Camera at :"+backObjPos[0]*100+","+backObjPos[1]*100);
 			System.out.println(" gripper distance sensor is "+this.getObjectDistanceToGripper());
-			System.out.println("test image size "+ obj.getSize()[0]+" , "+ obj.getSize()[1]);
 			System.out.println("-> the orientation of the robot is "+Math.atan2(this.getSelf().getOrientation()[0],this.getSelf().getOrientation()[8]));
 			System.out.println(" the position of the robot is "+Math.round(this.getSelf().getPosition()[0]*100)+";"+Math.round(this.getSelf().getPosition()[2]*100));
 		}
