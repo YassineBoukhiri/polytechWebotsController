@@ -47,6 +47,7 @@ public class PolyCreateControler extends Supervisor {
 	static double WHEEL_RADIUS = 0.031;
 	static double AXLE_LENGTH = 0.271756;
 	static double ENCODER_RESOLUTION = 507.9188;
+	static double turnPrecision= 0.05;
 
 	/**
 	 * the inkEvaporation parameter in the WorldInfo element of the robot scene may
@@ -92,6 +93,8 @@ public class PolyCreateControler extends Supervisor {
 
 	public int timestep = Integer.MAX_VALUE;
 	public Random random = new Random();
+	
+	private boolean isTurning = false;
 
 	public PolyCreateControler() {
 
@@ -294,36 +297,60 @@ public class PolyCreateControler extends Supervisor {
 		rightMotor.setVelocity(NULL_SPEED);
 	}
 
-	public void passiveWait(double sec) {
+	synchronized void passiveWait(double sec) {
 		double start_time = getTime();
 		do {
-			step(timestep);
+			if (!isTurning ) {
+				doStep();
+			}
 		} while (start_time + sec > getTime());
 	}
+	
+	synchronized void doStep() {
+		step(timestep);
+	}
+	
+	/**
+	 * 
+	 * @return the orientation wrt the north in [0; 2PI[
+	 */
+	public double getOrientation() {
+		double res = Math.acos(this.getSelf().getOrientation()[0]);
+		if(this.getSelf().getOrientation()[1] < 0) {
+			return (2*Math.PI) - res;
+		}else {
+			return res;
+		}
+	}
+	
+	
 
 	public double randdouble() {
 		return random.nextDouble();
 	}
 
-	public void turn(double angle) {
+	
+	/**
+	 * turn the robot to getOrientation()+angle
+	 * @param angle: the angle to apply
+	 */
+	void turn(double angle) {
+		this.isTurning=true;
 		stop();
-		double l_offset = leftSensor.getValue();
-		double r_offset = rightSensor.getValue();
-		step(timestep);
-		double neg = (angle < 0.0) ? -1.0 : 1.0;
-		leftMotor.setVelocity(neg * HALF_SPEED);
-		rightMotor.setVelocity(-neg * HALF_SPEED);
-		double orientation;
+		doStep();
+		double direction = (angle < 0.0) ? -1.0 : 1.0;
+		leftMotor.setVelocity(direction * HALF_SPEED);
+		rightMotor.setVelocity(-direction * HALF_SPEED);
+		double targetOrientation = (this.getOrientation()+angle)%(2*Math.PI);
+		double actualOrientation;
+		System.out.println("do");
 		do {
-			double l = leftSensor.getValue() - l_offset;
-			double r = rightSensor.getValue() - r_offset;
-			double dl = l * WHEEL_RADIUS; // distance covered by left wheel in meter
-			double dr = r * WHEEL_RADIUS; // distance covered by right wheel in meter
-			orientation = neg * (dl - dr) / AXLE_LENGTH; // delta orientation in radian
-			step(timestep);
-		} while (orientation < neg * angle);
+			doStep();
+			actualOrientation = this.getOrientation();
+		} while (!(actualOrientation > (targetOrientation -turnPrecision) && actualOrientation < (targetOrientation + turnPrecision)));
 		stop();
-		step(timestep);
+		doStep();
+		this.isTurning=false;
 	}
 	
 	
@@ -343,7 +370,7 @@ public class PolyCreateControler extends Supervisor {
 		turn(Math.atan(x/y*Math.PI/180));
 		goForward();
 		System.out.println("value"+frontDistanceSensor.getValue());
-		if(frontDistanceSensor.getValue() < 500) {
+		if(frontDistanceSensor.getValue() < 200) {
 			stop();
 			turn(Math.PI);
 		}
@@ -359,6 +386,7 @@ public class PolyCreateControler extends Supervisor {
 			System.out.println(" I saw an object on back Camera at :"+backObjPos[0]*100+","+backObjPos[1]*100);
 			System.out.println(" gripper distance sensor is "+this.getObjectDistanceToGripper());
 			System.out.println("-> the orientation of the robot is "+Math.atan2(this.getSelf().getOrientation()[0],this.getSelf().getOrientation()[8]));
+			System.out.println("->  the orientation of the robot is " +controler.getOrientation());
 			System.out.println(" the position of the robot is "+Math.round(this.getSelf().getPosition()[0]*100)+";"+Math.round(this.getSelf().getPosition()[2]*100));
 		}
 		else {
