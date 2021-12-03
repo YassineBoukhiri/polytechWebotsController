@@ -196,7 +196,7 @@ public class PolyCreateControler extends Supervisor {
 	}
 
 	public void listen(){
-		CameraRecognitionObject[] backObjs = this.frontCamera.getRecognitionObjects();
+		CameraRecognitionObject[] frontObjs = this.frontCamera.getRecognitionObjects();
 		if (isThereVirtualwall()) {
 			System.out.println("Virtual wall detected\n");
 			fsm.raiseVirtualWall();
@@ -212,7 +212,7 @@ public class PolyCreateControler extends Supervisor {
 		} else {
 			fsm.raiseClear();
 		}
-		if (backObjs.length > 0) {
+		if (frontObjs.length > 0) {
 			fsm.raiseGoTo();
 		}
 	}
@@ -359,20 +359,34 @@ public class PolyCreateControler extends Supervisor {
 	
 	
 	public void doGoTo() {
-		CameraRecognitionObject[] backObjs = this.frontCamera.getRecognitionObjects();
-		CameraRecognitionObject obj = backObjs[0];
+		CameraRecognitionObject[] frontObjs = this.frontCamera.getRecognitionObjects();
+		CameraRecognitionObject obj = frontObjs[0];
+		System.out.println(frontObjs.length);
 		int oid = obj.getId();
 		Node obj2 = this.getFromId(oid);
-		double[] backObjPos = obj.getPosition();
-		double x = backObjPos[0];
-		double y = backObjPos[1];
-		System.out.println(Math.atan(x/y*Math.PI/180));
-		turn(Math.atan(x/y*Math.PI/180));
+		double[] frontObjPos = obj.getPosition();
+		double x = frontObjPos[0];
+		double y = frontObjPos[1];
+		double angle = Math.atan(x/y*Math.PI/180);
+		System.out.println(angle);
+		if(angle >= turnPrecision) {
+			turn(angle);
+		}
 		goForward();
-		System.out.println("value"+frontDistanceSensor.getValue());
-		if(frontDistanceSensor.getValue() < 200) {
+		System.out.println("value   "+frontDistanceSensor.getValue());
+		if(frontDistanceSensor.getValue() < 400) {
 			stop();
 			turn(Math.PI);
+			this.passiveWait(0.4);
+			System.out.println("distance to gripper     :"+this.getObjectDistanceToGripper());
+			if(this.getObjectDistanceToGripper() > 129) {
+				goBackward();
+			}
+			stop();
+			this.stop();
+			this.closeGripper();
+			this.passiveWait(0.2);
+			fsm.raiseGotIt();
 		}
 			
 		/*if(this.getObjectDistanceToGripper() > 129) {
