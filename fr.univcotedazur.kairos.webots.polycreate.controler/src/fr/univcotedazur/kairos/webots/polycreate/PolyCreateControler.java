@@ -52,6 +52,7 @@ public class PolyCreateControler extends Supervisor {
 	static double WHEEL_RADIUS = 0.0242; //0.0242; // 0.031
 	static double AXLE_LENGTH =  0.271756;
 	static double ENCODER_RESOLUTION = 507.9188;
+	static double turnPrecision= 0.05;
 	
 	static int EDGE = 2;
 
@@ -101,6 +102,8 @@ public class PolyCreateControler extends Supervisor {
 	public int timestep = Integer.MAX_VALUE;
 	public Random random = new Random();
 
+	private boolean isTurning = false;
+	
 	public PolyCreateControler() {
 
 		timestep = (int) Math.round(this.getBasicTimeStep());
@@ -199,10 +202,6 @@ public class PolyCreateControler extends Supervisor {
 		
 	}
 
-	public double getOrientation() {
-		return Math.atan2(getSelf().getOrientation()[0],
-				 getSelf().getOrientation()[8]);
-	}
 	
 	public void listen(){
 		if (isThereVirtualwall()) {
@@ -363,37 +362,61 @@ public class PolyCreateControler extends Supervisor {
 		rightMotor.setVelocity(NULL_SPEED);
 	}
 
-	public void passiveWait(double sec) {
+
+	synchronized void passiveWait(double sec) {
 		double start_time = getTime();
 		do {
-			step(timestep);
+			if (!isTurning ) {
+				doStep();
+			}
 		} while (start_time + sec > getTime());
 	}
+	
+
+	synchronized void doStep() {
+		step(timestep);
+	}
+
+	/**
+	 * 
+	 * @return the orientation wrt the north in [0; 2PI[
+	 */
+	public double getOrientation() {
+		double res = Math.acos(this.getSelf().getOrientation()[0]);
+		if(this.getSelf().getOrientation()[1] < 0) {
+			return (2*Math.PI) - res;
+		}else {
+			return res;
+		}
+	}
+	/**
+	 * turn the robot to getOrientation()+angle
+	 * @param angle: the angle to apply
+	 */
+	void turn(double angle) {
+		this.isTurning=true;
+		stop();
+		doStep();
+		double direction = (angle < 0.0) ? -1.0 : 1.0;
+		leftMotor.setVelocity(direction * HALF_SPEED);
+		rightMotor.setVelocity(-direction * HALF_SPEED);
+		double targetOrientation = (this.getOrientation()+angle)%(2*Math.PI);
+		double actualOrientation;
+		System.out.println("do");
+		do {
+			doStep();
+			actualOrientation = this.getOrientation();
+		} while (!(actualOrientation > (targetOrientation -turnPrecision) && actualOrientation < (targetOrientation + turnPrecision)));
+		stop();
+		doStep();
+		this.isTurning=false;
+	}
+
 
 	public double randdouble() {
 		return random.nextDouble();
 	}
 
-	public void turn(double angle) {
-		stop();
-		double l_offset = leftSensor.getValue();
-		double r_offset = rightSensor.getValue();
-		step(timestep);
-		double neg = (angle < 0.0) ? -1.0 : 1.0;
-		leftMotor.setVelocity(neg * HALF_SPEED);
-		rightMotor.setVelocity(-neg * HALF_SPEED);
-		double orientation;
-		do {
-			double l = leftSensor.getValue() - l_offset;
-			double r = rightSensor.getValue() - r_offset;
-			double dl = l * WHEEL_RADIUS; // distance covered by left wheel in meter
-			double dr = r * WHEEL_RADIUS; // distance covered by right wheel in meter
-			orientation = neg * (dl - dr) / AXLE_LENGTH; // delta orientation in radian
-			step(timestep);
-		} while (orientation < neg * angle);
-		stop();
-		step(timestep);
-	}
 
 	/**
 	 * The values are returned as a 3D-vector, therefore only the indices 0, 1, and
@@ -411,13 +434,7 @@ public class PolyCreateControler extends Supervisor {
 		return gps.getValues();
 	}
 	
-	public void myTurn(double angle) {
-		stop();
-		step(timestep);
-		double goal = angle - getOrientation();
-		while(angle
-	}
-
+	
 	public static void main(String[] args) {
 		PolyCreateControler controler = new PolyCreateControler();
 		/*System.out.print(controler.getOrientiation());
