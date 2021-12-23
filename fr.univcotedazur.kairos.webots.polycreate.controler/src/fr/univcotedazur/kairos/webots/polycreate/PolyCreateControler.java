@@ -184,6 +184,7 @@ public class PolyCreateControler extends Supervisor {
 		fsm.getDoGoForward().subscribe(new DoGoForwardObserver(this));
 		fsm.getDoGoBackward().subscribe(new DoGoBackwardObserver(this));
 		fsm.getDoGoTo().subscribe(new DoGoToObserver(this));
+		fsm.getDoCatch().subscribe(new DoCatchObserver(this));
 
 		/*
 		 * Start the robot
@@ -197,6 +198,7 @@ public class PolyCreateControler extends Supervisor {
 
 	public void listen(){
 		CameraRecognitionObject[] frontObjs = this.frontCamera.getRecognitionObjects();
+		//CameraRecognitionObject[] backObjs = this.backCamera.getRecognitionObjects();
 		if (isThereVirtualwall()) {
 			System.out.println("Virtual wall detected\n");
 			fsm.raiseVirtualWall();
@@ -212,8 +214,11 @@ public class PolyCreateControler extends Supervisor {
 		} else {
 			fsm.raiseClear();
 		}
-		if (frontObjs.length > 0) {
+		if (frontObjs.length > 0 ) {
 			fsm.raiseGoTo();
+		}
+		if(this.getObjectDistanceToGripper() < 120) {
+			fsm.raiseCatch();
 		}
 	}
 
@@ -354,7 +359,18 @@ public class PolyCreateControler extends Supervisor {
 	}
 	
 	
-	
+	public void doCatch() {
+		if(this.getObjectDistanceToGripper() > 120) {
+			goBackward();
+		}
+		else {
+			System.out.println("rear distance : "+ this.getObjectDistanceToGripper());
+			stop();
+			this.closeGripper();
+			this.passiveWait(0.2);
+			fsm.raiseGotIt();
+		}		
+	}
 	
 	
 	
@@ -377,17 +393,19 @@ public class PolyCreateControler extends Supervisor {
 		if(frontDistanceSensor.getValue() < 400) {
 			stop();
 			turn(Math.PI);
-			this.passiveWait(0.4);
-			System.out.println("distance to gripper     :"+this.getObjectDistanceToGripper());
-			if(this.getObjectDistanceToGripper() > 129) {
-				goBackward();
-			}
+			this.passiveWait(0.6);
+			fsm.raiseCatch();
+			System.out.println("heeeey");
+		}
+		System.out.println("rear distance : "+ this.getObjectDistanceToGripper());
+		
+		/*if(this.getObjectDistanceToGripper() < 300) {
+			System.out.println("rear distancedazdazdaz : "+ this.getObjectDistanceToGripper());
 			stop();
-			this.stop();
 			this.closeGripper();
 			this.passiveWait(0.2);
 			fsm.raiseGotIt();
-		}
+		}*/
 			
 		/*if(this.getObjectDistanceToGripper() > 129) {
 			goBackward();

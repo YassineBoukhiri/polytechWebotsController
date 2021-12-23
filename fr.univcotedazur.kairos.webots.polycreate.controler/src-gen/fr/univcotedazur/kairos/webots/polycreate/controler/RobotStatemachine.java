@@ -15,6 +15,7 @@ public class RobotStatemachine implements IStatemachine {
 		MAIN_REGION_PARTIALY_BLOCKED_R1_LEFT_BLOCKED,
 		MAIN_REGION_PARTIALY_BLOCKED_R1_RIGHT_BLOCKED,
 		MAIN_REGION_LOOK_FOR,
+		MAIN_REGION_CATCH,
 		$NULLSTATE$
 	};
 	
@@ -100,6 +101,7 @@ public class RobotStatemachine implements IStatemachine {
 		clear = false;
 		goToEvent = false;
 		gotIt = false;
+		catchEvent = false;
 	}
 	
 	private void microStep() {
@@ -122,6 +124,9 @@ public class RobotStatemachine implements IStatemachine {
 		case MAIN_REGION_LOOK_FOR:
 			main_region_LOOK_FOR_react(-1);
 			break;
+		case MAIN_REGION_CATCH:
+			main_region_CATCH_react(-1);
+			break;
 		default:
 			break;
 		}
@@ -142,7 +147,7 @@ public class RobotStatemachine implements IStatemachine {
 			clearInEvents();
 			
 			nextEvent();
-		} while ((((((((((front || frontL) || frontR) || virtualWall) || back) || lTS) || rTS) || clear) || goToEvent) || gotIt));
+		} while (((((((((((front || frontL) || frontR) || virtualWall) || back) || lTS) || rTS) || clear) || goToEvent) || gotIt) || catchEvent));
 		
 		isExecuting = false;
 	}
@@ -174,6 +179,8 @@ public class RobotStatemachine implements IStatemachine {
 			return stateVector[0] == State.MAIN_REGION_PARTIALY_BLOCKED_R1_RIGHT_BLOCKED;
 		case MAIN_REGION_LOOK_FOR:
 			return stateVector[0] == State.MAIN_REGION_LOOK_FOR;
+		case MAIN_REGION_CATCH:
+			return stateVector[0] == State.MAIN_REGION_CATCH;
 		default:
 			return false;
 		}
@@ -295,6 +302,18 @@ public class RobotStatemachine implements IStatemachine {
 		synchronized(RobotStatemachine.this) {
 			inEventQueue.add(() -> {
 				gotIt = true;
+			});
+			runCycle();
+		}
+	}
+	
+	private boolean catchEvent;
+	
+	
+	public void raiseCatch() {
+		synchronized(RobotStatemachine.this) {
+			inEventQueue.add(() -> {
+				catchEvent = true;
 			});
 			runCycle();
 		}
@@ -428,6 +447,22 @@ public class RobotStatemachine implements IStatemachine {
 		return doGoToObservable;
 	}
 	
+	private boolean doCatch;
+	
+	
+	protected void raiseDoCatch() {
+		synchronized(RobotStatemachine.this) {
+			doCatch = true;
+			doCatchObservable.next(null);
+		}
+	}
+	
+	private Observable<Void> doCatchObservable = new Observable<Void>();
+	
+	public Observable<Void> getDoCatch() {
+		return doCatchObservable;
+	}
+	
 	private double angle;
 	
 	public synchronized double getAngle() {
@@ -498,6 +533,11 @@ public class RobotStatemachine implements IStatemachine {
 		raiseDoGoTo();
 	}
 	
+	/* Entry action for state 'CATCH'. */
+	private void entryAction_main_region_CATCH() {
+		raiseDoCatch();
+	}
+	
 	/* 'default' enter sequence for state MOVING */
 	private void enterSequence_main_region_MOVING_default() {
 		entryAction_main_region_MOVING();
@@ -541,6 +581,12 @@ public class RobotStatemachine implements IStatemachine {
 	private void enterSequence_main_region_LOOK_FOR_default() {
 		entryAction_main_region_LOOK_FOR();
 		stateVector[0] = State.MAIN_REGION_LOOK_FOR;
+	}
+	
+	/* 'default' enter sequence for state CATCH */
+	private void enterSequence_main_region_CATCH_default() {
+		entryAction_main_region_CATCH();
+		stateVector[0] = State.MAIN_REGION_CATCH;
 	}
 	
 	/* 'default' enter sequence for region main region */
@@ -602,6 +648,11 @@ public class RobotStatemachine implements IStatemachine {
 		stateVector[0] = State.$NULLSTATE$;
 	}
 	
+	/* Default exit sequence for state CATCH */
+	private void exitSequence_main_region_CATCH() {
+		stateVector[0] = State.$NULLSTATE$;
+	}
+	
 	/* Default exit sequence for region main region */
 	private void exitSequence_main_region() {
 		switch (stateVector[0]) {
@@ -622,6 +673,9 @@ public class RobotStatemachine implements IStatemachine {
 			break;
 		case MAIN_REGION_LOOK_FOR:
 			exitSequence_main_region_LOOK_FOR();
+			break;
+		case MAIN_REGION_CATCH:
+			exitSequence_main_region_CATCH();
 			break;
 		default:
 			break;
@@ -866,20 +920,47 @@ public class RobotStatemachine implements IStatemachine {
 				
 				transitioned_after = 0;
 			} else {
-				if (gotIt) {
+				if (virtualWall) {
 					exitSequence_main_region_LOOK_FOR();
-					enterSequence_main_region_MOVING_default();
+					enterSequence_main_region_VIRTUAL_WALL_default();
 					react(0);
 					
 					transitioned_after = 0;
 				} else {
-					if (virtualWall) {
+					if (catchEvent) {
 						exitSequence_main_region_LOOK_FOR();
-						enterSequence_main_region_VIRTUAL_WALL_default();
+						enterSequence_main_region_CATCH_default();
 						react(0);
 						
 						transitioned_after = 0;
 					}
+				}
+			}
+		}
+		/* If no transition was taken then execute local reactions */
+		if (transitioned_after==transitioned_before) {
+			transitioned_after = react(transitioned_before);
+		}
+		return transitioned_after;
+	}
+	
+	private long main_region_CATCH_react(long transitioned_before) {
+		long transitioned_after = transitioned_before;
+		
+		if (transitioned_after<0) {
+			if (gotIt) {
+				exitSequence_main_region_CATCH();
+				enterSequence_main_region_MOVING_default();
+				react(0);
+				
+				transitioned_after = 0;
+			} else {
+				if (catchEvent) {
+					exitSequence_main_region_CATCH();
+					enterSequence_main_region_CATCH_default();
+					react(0);
+					
+					transitioned_after = 0;
 				}
 			}
 		}
