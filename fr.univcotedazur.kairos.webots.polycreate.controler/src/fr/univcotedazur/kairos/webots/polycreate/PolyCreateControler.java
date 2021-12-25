@@ -360,7 +360,7 @@ public class PolyCreateControler extends Supervisor {
 	
 	
 	public void doCatch() {
-		if(this.getObjectDistanceToGripper() > 120) {
+		if(this.getObjectDistanceToGripper() > 115) {
 			goBackward();
 		}
 		else {

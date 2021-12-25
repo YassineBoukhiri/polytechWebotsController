@@ -933,6 +933,14 @@ public class RobotStatemachine implements IStatemachine {
 						react(0);
 						
 						transitioned_after = 0;
+					} else {
+						if (clear) {
+							exitSequence_main_region_LOOK_FOR();
+							enterSequence_main_region_MOVING_default();
+							react(0);
+							
+							transitioned_after = 0;
+						}
 					}
 				}
 			}
