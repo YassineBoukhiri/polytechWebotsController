@@ -39,6 +39,7 @@ public class PolyCreateControler extends Supervisor {
 	static double ENCODER_RESOLUTION = 507.9188;
 	static double turnPrecision= 0.05;
 
+	static int EDGE = 2;
 
 	/**
 	 * the inkEvaporation parameter in the WorldInfo element of the robot scene may be interesting to access
@@ -244,23 +245,23 @@ public class PolyCreateControler extends Supervisor {
 	 * @param angle: the angle to apply
 	 */
 	void turn(double angle) {
-		this.isTurning=true;
-		stop();
-		doStep();
-		double direction = (angle < 0.0) ? -1.0 : 1.0;
-		leftMotor.setVelocity(direction * HALF_SPEED);
-		rightMotor.setVelocity(-direction * HALF_SPEED);
-		double targetOrientation = (this.getOrientation()+angle)%(2*Math.PI);
-		double actualOrientation;
-		System.out.println("do");
-		do {
-			doStep();
-			actualOrientation = this.getOrientation();
-		} while (!(actualOrientation > (targetOrientation -turnPrecision) && actualOrientation < (targetOrientation + turnPrecision)));
-		stop();
-		doStep();
-		this.isTurning=false;
-	}
+        this.isTurning=true;
+        stop();
+        doStep();
+        double direction = (angle < 0.0) ? -1.0 : 1.0;
+        leftMotor.setVelocity(direction * HALF_SPEED);
+        rightMotor.setVelocity(-direction * HALF_SPEED);
+        double targetOrientation = (this.getOrientation()+angle)%(2*Math.PI);
+        double actualOrientation;
+        System.out.println("do");
+        do {
+            doStep();
+            actualOrientation = this.getOrientation();
+        } while (!(actualOrientation > (targetOrientation -turnPrecision) && actualOrientation < (targetOrientation + turnPrecision)));
+        stop();
+        doStep();
+        this.isTurning=false;
+    }
 
 
 	/**
@@ -274,79 +275,93 @@ public class PolyCreateControler extends Supervisor {
 	public double[] getPosition() {
 		return gps.getValues();
 	}
+	
+	
+	/* turnings */ 
+	
+	public void turnLeft() {
+	    System.out.println("Turning left");
+	    turn(Math.PI/2 );
+	    
+	}
+
+	public void turnRight() {
+	    System.out.println("Turning right");
+	    turn(-Math.PI/2 );
+	    passiveWait(0.5);
+	}
+	 
+
+
+	public void doTurnRandomlyLeft() {
+	    turn(Math.PI * this.randdouble() + 0.6);
+	}
+
+	public void doTurnRandomlyRight() {
+	    turn(-Math.PI * this.randdouble() - 0.6);
+	}
+
+	public void doFullTurn() {
+	    turn(Math.PI);
+	}
+	
+	
+	/* draw feature */
+	
+	public void goLine(int length) {
+	    long t= System.currentTimeMillis();
+	    long end = t+ 1000 * length;
+	    System.out.println("Going without drawing");
+	    
+	    while(System.currentTimeMillis() < end) {
+	        goForward();
+	        passiveWait(0.5);
+	        System.out.println("Going in process");
+	    }
+	    stop();
+	    passiveWait(0.5);
+	}
+	    
+
+	public void drawLine(int length) {
+	    long t= System.currentTimeMillis();
+	    long end = t+ 1000 * length;
+	    System.out.println("Drawing a line");
+	    
+	    while(System.currentTimeMillis() < end) {
+	        goForward();
+	        passiveWait(0.5);
+	        System.out.println("Drawing a line in process");
+	    }
+	    stop();
+	    passiveWait(0.5);
+
+	}
+
+	public void write0() {
+	    drawLine(2*EDGE);
+	    turnRight();
+	    drawLine(EDGE);
+	    turnRight();
+	    drawLine(2*EDGE);
+	    turnRight();
+	    drawLine(EDGE);
+	    // going to bottom right corner
+	    doFullTurn();
+	    goLine(EDGE);
+	}
+	
+	/* Main */
 
 
 	public static void main(String[] args) {
 		PolyCreateControler controler = new PolyCreateControler();
-
-		try {
-			controler.openGripper();
-			controler.pen.write(true);
-			controler.ledOn.set(1);
-			controler.passiveWait(0.5);
-			System.out.println("let's start");
-			while (true) {
-				/**
-				 * The position and orientation are expressed relatively to the camera (the relative position is the one of the center of the object which can differ from its origin) and the units are meter and radian.
-				 * https://www.cyberbotics.com/doc/reference/camera?tab-language=python#wb_camera_has_recognition
-				 */
-				Node anObj = controler.getFromDef("can"); //should not be there, only to have another orientation for testing...
-				controler.passiveWait(0.1);
-				
-			//	System.out.println("the orientation of the can is " +controler.computeRelativeObjectOrientation(anObj.getPosition(),anObj.getOrientation()));
-				
-				System.out.println("->  the orientation of the robot is " +controler.getOrientation());
-				System.out.println("    the position of the robot is " +Math.round(controler.getSelf().getPosition()[0]*100)+";"+Math.round(controler.getSelf().getPosition()[2]*100));
-
-				System.out.println("    front distance: "+controler.frontDistanceSensor.getValue());
-				
-				CameraRecognitionObject[] backObjs = controler.backCamera.getRecognitionObjects();
-				if (backObjs.length > 0) {
-					CameraRecognitionObject obj = backObjs[0];
-					double[] backObjPos = obj.getPosition();
-					/**
-					 * The position and orientation are expressed relatively to the camera (the relative position is the one of the center of the object which can differ from its origin) and the units are meter and radian.
-					 */
-					System.out.println("        I saw an object on back Camera at : "+backObjPos[0]+","+backObjPos[1]);
-				}
-				CameraRecognitionObject[] frontObjs = controler.frontCamera.getRecognitionObjects();
-				if (frontObjs.length > 0) {
-					for(CameraRecognitionObject obj : frontObjs) {
-						double[] frontObjPos = obj.getPosition();
-						System.out.println("        I saw "+obj.getModel()+" on front Camera at : "+((double)Math.round(frontObjPos[1]*1000))/10+"; "+Math.round(frontObjPos[0]*180/Math.PI));
-					}
-				}
-				System.out.println("         gripper distance sensor is "+controler.getObjectDistanceToGripper());
-				if (controler.isThereVirtualwall()) {
-					System.out.println("Virtual wall detected\n");
-					controler.turn(Math.PI);
-				} else if (controler.isThereCollisionAtLeft() || controler.frontLeftDistanceSensor.getValue() < 250) {
-					System.out.println("          Left obstacle detected\n");
-					controler.goBackward();
-					controler.passiveWait(0.5);
-					controler.turn(Math.PI * controler.randdouble()+0.6);
-				} else if (controler.isThereCollisionAtRight()|| controler.frontRightDistanceSensor.getValue() < 250 || controler.frontDistanceSensor.getValue() < 250) {
-					System.out.println("          Right obstacle detected\n");
-					controler.goBackward();
-					controler.passiveWait(0.5);
-					controler.turn(-Math.PI * controler.randdouble()+0.6);
-				} else {
-					controler.goForward();
-				}
-				controler.flushIRReceiver();
-				
-				
-				
-						
-			}
-
-		}catch (Exception e) {
-			controler.delete();
-		}
-
-
-
-
+		controler.passiveWait(0.5);
+		controler.goLine(1);
+		controler.passiveWait(0.5);
+		controler.turnRight();
+		controler.passiveWait(0.5);
+		controler.turnRight();
 	}
 
 
