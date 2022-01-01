@@ -44,10 +44,12 @@ public class PolyCreateControler extends Supervisor {
 	static int HALF_SPEED = 8;
 	static int MIN_SPEED = -16;
 
+	static int EDGE = 1; 
+	
 	static double WHEEL_RADIUS = 0.031;
 	static double AXLE_LENGTH = 0.271756;
 	static double ENCODER_RESOLUTION = 507.9188;
-	static double turnPrecision= 0.05;
+	static double turnPrecision= 0.025;
 
 	/**
 	 * the inkEvaporation parameter in the WorldInfo element of the robot scene may
@@ -349,6 +351,7 @@ public class PolyCreateControler extends Supervisor {
 		leftMotor.setVelocity(direction * HALF_SPEED);
 		rightMotor.setVelocity(-direction * HALF_SPEED);
 		double targetOrientation = (this.getOrientation()+angle)%(2*Math.PI);
+		if (targetOrientation < 0) targetOrientation += 2*Math.PI;
 		double actualOrientation;
 		System.out.println("do");
 		do {
@@ -407,35 +410,6 @@ public class PolyCreateControler extends Supervisor {
 		}
 		System.out.println("rear distance : "+ this.getObjectDistanceToGripper());
 		
-		/*if(this.getObjectDistanceToGripper() < 300) {
-			System.out.println("rear distancedazdazdaz : "+ this.getObjectDistanceToGripper());
-			stop();
-			this.closeGripper();
-			this.passiveWait(0.2);
-			fsm.raiseGotIt();
-		}*/
-			
-		/*if(this.getObjectDistanceToGripper() > 129) {
-			goBackward();
-			/*
-			/* The position and orientation are expressed relatively to the camera (the
-			relative position is the one of the center of the object which can differ
-			from its origin) and the units are meter and radian.
-			*/
-		/*
-			System.out.println(" I saw an object on back Camera at :"+backObjPos[0]*100+","+backObjPos[1]*100);
-			System.out.println(" gripper distance sensor is "+this.getObjectDistanceToGripper());
-			System.out.println("-> the orientation of the robot is "+Math.atan2(this.getSelf().getOrientation()[0],this.getSelf().getOrientation()[8]));
-			System.out.println("->  the orientation of the robot is " +controler.getOrientation());
-			System.out.println(" the position of the robot is "+Math.round(this.getSelf().getPosition()[0]*100)+";"+Math.round(this.getSelf().getPosition()[2]*100));
-		}
-		else {
-			this.stop();
-			this.closeGripper();
-			this.passiveWait(0.2);
-			fsm.raiseGotIt();
-			//backCamera.recognitionDisable();
-		}*/
 	}
 
 	/**
@@ -453,17 +427,127 @@ public class PolyCreateControler extends Supervisor {
 	public double[] getPosition() {
 		return gps.getValues();
 	}
+	
+	
+	/* turnings */ 
+    
+    public void turnLeft() {
+        System.out.println("Turning left");
+        turn(Math.PI/2 );
+        passiveWait(0.5);
+    }
+
+    public void turnRight() {
+        System.out.println("Turning right");
+        turn(-Math.PI/2 );
+        passiveWait(0.5);
+    }
+     
+
+    /* draw feature */
+    
+    public void goLine(int length) {
+        long t= System.currentTimeMillis();
+        long end = t+ 1000 * length;
+        System.out.println("Going without drawing");
+        
+        while(System.currentTimeMillis() < end) {
+            goForward();
+            passiveWait(0.5);
+            System.out.println("Going in process");
+        }
+        stop();
+        passiveWait(0.5);
+    }
+        
+
+    public void drawLine(int length) {
+    	pen.write(true);
+        long t= System.currentTimeMillis();
+        long end = t+ 1000 * length;
+        System.out.println("Drawing a line");
+        
+        while(System.currentTimeMillis() < end) {
+            goForward();
+            passiveWait(0.5);
+            System.out.println("Drawing a line in process");
+        }
+        stop();
+        pen.write(false);
+        passiveWait(0.5);
+    }
+
+    public void write0() {
+        drawLine(2*EDGE);
+        turnRight();
+        drawLine(EDGE);
+        turnRight();
+        drawLine(2*EDGE);
+        turnRight();
+        drawLine(EDGE);
+        doFullTurn();
+        goLine(EDGE);
+    }
+    
+    public void write1() {
+    	turnRight();
+    	goLine(EDGE);
+    	turnLeft();
+    	drawLine(2*EDGE);
+    	doFullTurn();
+    	goLine(2*EDGE);
+    	turnLeft();
+    }
+	
+    public void write2() {
+    	goLine(2*EDGE);
+    	turnRight();
+    	drawLine(EDGE);
+    	turnRight();
+    	drawLine(EDGE);
+    	turnRight();
+    	drawLine(EDGE);
+    	turnLeft();
+    	drawLine(EDGE);
+    	turnLeft();
+    	drawLine(EDGE);
+    }
+    
+	
+    public void write3() {
+    	goLine(2*EDGE);
+    	turnRight();
+    	drawLine(EDGE);
+    	turnRight();
+    	drawLine(EDGE);
+    	turnRight();
+    	drawLine(EDGE);
+    	doFullTurn();
+    	goLine(EDGE);
+    	turnRight();
+    	drawLine(EDGE);
+    	turnRight();
+    	drawLine(EDGE);
+    	doFullTurn();
+    	goLine(EDGE);
+    }
+	
+	
+	
+	
+	
+	
 
 	public static void main(String[] args) {
 		PolyCreateControler controler = new PolyCreateControler();
 		controler.openGripper();
 		controler.fsm.setGrabActivated(false);
+		controler.write3();
 		
-		
-		while (true) {
+		/*while (true) {
 			controler.passiveWait(0.1);
 			controler.listen();
-		}
+		}*/
 		
 	}
 
