@@ -457,6 +457,9 @@ public class PolyCreateControler extends Supervisor {
 	public static void main(String[] args) {
 		PolyCreateControler controler = new PolyCreateControler();
 		controler.openGripper();
+		controler.fsm.setGrabActivated(false);
+		
+		
 		while (true) {
 			controler.passiveWait(0.1);
 			controler.listen();

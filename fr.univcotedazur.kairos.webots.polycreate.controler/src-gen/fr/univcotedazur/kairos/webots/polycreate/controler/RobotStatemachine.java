@@ -8,22 +8,22 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class RobotStatemachine implements IStatemachine {
 	public enum State {
-		MAIN_REGION_PARALLEL,
-		MAIN_REGION_PARALLEL_R1_PARTIALY_BLOCKED,
-		MAIN_REGION_PARALLEL_R1_PARTIALY_BLOCKED_R1_LEFT_BLOCKED,
-		MAIN_REGION_PARALLEL_R1_PARTIALY_BLOCKED_R1_RIGHT_BLOCKED,
-		MAIN_REGION_PARALLEL_R1_MOVING,
-		MAIN_REGION_PARALLEL_R1_BLOCKED,
-		MAIN_REGION_PARALLEL_R1_GRAB_OBJECT,
-		MAIN_REGION_PARALLEL_R1_GRAB_OBJECT_R1_CATCH,
-		MAIN_REGION_PARALLEL_R1_GRAB_OBJECT_R1_LOOK_FOR,
-		MAIN_REGION_PARALLEL_R2_VIRTUAL_WALL,
-		MAIN_REGION_PARALLEL_R2_CLEAR,
+		MAIN_REGION_BLOCKED,
+		MAIN_REGION_BLOCKED_R1_PARTIALLY_BLOCKED,
+		MAIN_REGION_BLOCKED_R1_PARTIALLY_BLOCKED_R1_LEFT_BLOCKED,
+		MAIN_REGION_BLOCKED_R1_PARTIALLY_BLOCKED_R1_RIGHT_BLOCKED,
+		MAIN_REGION_BLOCKED_R1_BLOCKED,
+		MAIN_REGION_BLOCKED_R1_VIRTUAL_WALL,
+		MAIN_REGION_WORKING,
+		MAIN_REGION_WORKING_R1_CLEANING,
+		MAIN_REGION_WORKING_R1_GRAB_OBJECT,
+		MAIN_REGION_WORKING_R1_GRAB_OBJECT_R1_CATCH,
+		MAIN_REGION_WORKING_R1_GRAB_OBJECT_R1_LOOK_FOR,
 		$NULLSTATE$
 	};
 	
 	private State[] historyVector = new State[1];
-	private final State[] stateVector = new State[2];
+	private final State[] stateVector = new State[1];
 	
 	private BlockingQueue<Runnable> inEventQueue = new LinkedBlockingQueue<Runnable>();
 	private boolean isExecuting;
@@ -39,21 +39,8 @@ public class RobotStatemachine implements IStatemachine {
 			this.isExecuting = value;
 		}
 	}
-	private long stateConfVectorPosition;
-	
-	protected long getStateConfVectorPosition() {
-		synchronized(RobotStatemachine.this) {
-			return stateConfVectorPosition;
-		}
-	}
-	
-	protected void setStateConfVectorPosition(long value) {
-		synchronized(RobotStatemachine.this) {
-			this.stateConfVectorPosition = value;
-		}
-	}
 	public RobotStatemachine() {
-		for (int i = 0; i < 2; i++) {
+		for (int i = 0; i < 1; i++) {
 			stateVector[i] = State.$NULLSTATE$;
 		}
 		for (int i = 0; i < 1; i++) {
@@ -62,9 +49,7 @@ public class RobotStatemachine implements IStatemachine {
 		
 		clearInEvents();
 		
-		setAngle(0.0);
-		
-		setDistance(0.0);
+		setGrabActivated(false);
 		
 		isExecuting = false;
 	}
@@ -95,7 +80,7 @@ public class RobotStatemachine implements IStatemachine {
 	 * @see IStatemachine#isActive()
 	 */
 	public synchronized boolean isActive() {
-		return stateVector[0] != State.$NULLSTATE$||stateVector[1] != State.$NULLSTATE$;
+		return stateVector[0] != State.$NULLSTATE$;
 	}
 	
 	/** 
@@ -121,44 +106,30 @@ public class RobotStatemachine implements IStatemachine {
 	}
 	
 	private void microStep() {
-		long transitioned = -1;
-		
-		stateConfVectorPosition = 0;
-		
 		switch (stateVector[0]) {
-		case MAIN_REGION_PARALLEL_R1_PARTIALY_BLOCKED_R1_LEFT_BLOCKED:
-			transitioned = main_region_PARALLEL_r1_PARTIALY_BLOCKED_r1_LEFT_BLOCKED_react(transitioned);
+		case MAIN_REGION_BLOCKED_R1_PARTIALLY_BLOCKED_R1_LEFT_BLOCKED:
+			main_region_BLOCKED_r1_PARTIALLY_BLOCKED_r1_LEFT_BLOCKED_react(-1);
 			break;
-		case MAIN_REGION_PARALLEL_R1_PARTIALY_BLOCKED_R1_RIGHT_BLOCKED:
-			transitioned = main_region_PARALLEL_r1_PARTIALY_BLOCKED_r1_RIGHT_BLOCKED_react(transitioned);
+		case MAIN_REGION_BLOCKED_R1_PARTIALLY_BLOCKED_R1_RIGHT_BLOCKED:
+			main_region_BLOCKED_r1_PARTIALLY_BLOCKED_r1_RIGHT_BLOCKED_react(-1);
 			break;
-		case MAIN_REGION_PARALLEL_R1_MOVING:
-			transitioned = main_region_PARALLEL_r1_MOVING_react(transitioned);
+		case MAIN_REGION_BLOCKED_R1_BLOCKED:
+			main_region_BLOCKED_r1_BLOCKED_react(-1);
 			break;
-		case MAIN_REGION_PARALLEL_R1_BLOCKED:
-			transitioned = main_region_PARALLEL_r1_BLOCKED_react(transitioned);
+		case MAIN_REGION_BLOCKED_R1_VIRTUAL_WALL:
+			main_region_BLOCKED_r1_VIRTUAL_WALL_react(-1);
 			break;
-		case MAIN_REGION_PARALLEL_R1_GRAB_OBJECT_R1_CATCH:
-			transitioned = main_region_PARALLEL_r1_GRAB_OBJECT_r1_CATCH_react(transitioned);
+		case MAIN_REGION_WORKING_R1_CLEANING:
+			main_region_WORKING_r1_CLEANING_react(-1);
 			break;
-		case MAIN_REGION_PARALLEL_R1_GRAB_OBJECT_R1_LOOK_FOR:
-			transitioned = main_region_PARALLEL_r1_GRAB_OBJECT_r1_LOOK_FOR_react(transitioned);
+		case MAIN_REGION_WORKING_R1_GRAB_OBJECT_R1_CATCH:
+			main_region_WORKING_r1_GRAB_OBJECT_r1_CATCH_react(-1);
+			break;
+		case MAIN_REGION_WORKING_R1_GRAB_OBJECT_R1_LOOK_FOR:
+			main_region_WORKING_r1_GRAB_OBJECT_r1_LOOK_FOR_react(-1);
 			break;
 		default:
 			break;
-		}
-		
-		if (getStateConfVectorPosition()<1) {
-			switch (stateVector[1]) {
-			case MAIN_REGION_PARALLEL_R2_VIRTUAL_WALL:
-				transitioned = main_region_PARALLEL_r2_VIRTUAL_WALL_react(transitioned);
-				break;
-			case MAIN_REGION_PARALLEL_R2_CLEAR:
-				transitioned = main_region_PARALLEL_r2_CLEAR_react(transitioned);
-				break;
-			default:
-				break;
-			}
 		}
 	}
 	
@@ -194,31 +165,32 @@ public class RobotStatemachine implements IStatemachine {
 	public synchronized boolean isStateActive(State state) {
 	
 		switch (state) {
-		case MAIN_REGION_PARALLEL:
+		case MAIN_REGION_BLOCKED:
 			return stateVector[0].ordinal() >= State.
-					MAIN_REGION_PARALLEL.ordinal()&& stateVector[0].ordinal() <= State.MAIN_REGION_PARALLEL_R2_CLEAR.ordinal();
-		case MAIN_REGION_PARALLEL_R1_PARTIALY_BLOCKED:
+					MAIN_REGION_BLOCKED.ordinal()&& stateVector[0].ordinal() <= State.MAIN_REGION_BLOCKED_R1_VIRTUAL_WALL.ordinal();
+		case MAIN_REGION_BLOCKED_R1_PARTIALLY_BLOCKED:
 			return stateVector[0].ordinal() >= State.
-					MAIN_REGION_PARALLEL_R1_PARTIALY_BLOCKED.ordinal()&& stateVector[0].ordinal() <= State.MAIN_REGION_PARALLEL_R1_PARTIALY_BLOCKED_R1_RIGHT_BLOCKED.ordinal();
-		case MAIN_REGION_PARALLEL_R1_PARTIALY_BLOCKED_R1_LEFT_BLOCKED:
-			return stateVector[0] == State.MAIN_REGION_PARALLEL_R1_PARTIALY_BLOCKED_R1_LEFT_BLOCKED;
-		case MAIN_REGION_PARALLEL_R1_PARTIALY_BLOCKED_R1_RIGHT_BLOCKED:
-			return stateVector[0] == State.MAIN_REGION_PARALLEL_R1_PARTIALY_BLOCKED_R1_RIGHT_BLOCKED;
-		case MAIN_REGION_PARALLEL_R1_MOVING:
-			return stateVector[0] == State.MAIN_REGION_PARALLEL_R1_MOVING;
-		case MAIN_REGION_PARALLEL_R1_BLOCKED:
-			return stateVector[0] == State.MAIN_REGION_PARALLEL_R1_BLOCKED;
-		case MAIN_REGION_PARALLEL_R1_GRAB_OBJECT:
+					MAIN_REGION_BLOCKED_R1_PARTIALLY_BLOCKED.ordinal()&& stateVector[0].ordinal() <= State.MAIN_REGION_BLOCKED_R1_PARTIALLY_BLOCKED_R1_RIGHT_BLOCKED.ordinal();
+		case MAIN_REGION_BLOCKED_R1_PARTIALLY_BLOCKED_R1_LEFT_BLOCKED:
+			return stateVector[0] == State.MAIN_REGION_BLOCKED_R1_PARTIALLY_BLOCKED_R1_LEFT_BLOCKED;
+		case MAIN_REGION_BLOCKED_R1_PARTIALLY_BLOCKED_R1_RIGHT_BLOCKED:
+			return stateVector[0] == State.MAIN_REGION_BLOCKED_R1_PARTIALLY_BLOCKED_R1_RIGHT_BLOCKED;
+		case MAIN_REGION_BLOCKED_R1_BLOCKED:
+			return stateVector[0] == State.MAIN_REGION_BLOCKED_R1_BLOCKED;
+		case MAIN_REGION_BLOCKED_R1_VIRTUAL_WALL:
+			return stateVector[0] == State.MAIN_REGION_BLOCKED_R1_VIRTUAL_WALL;
+		case MAIN_REGION_WORKING:
 			return stateVector[0].ordinal() >= State.
-					MAIN_REGION_PARALLEL_R1_GRAB_OBJECT.ordinal()&& stateVector[0].ordinal() <= State.MAIN_REGION_PARALLEL_R1_GRAB_OBJECT_R1_LOOK_FOR.ordinal();
-		case MAIN_REGION_PARALLEL_R1_GRAB_OBJECT_R1_CATCH:
-			return stateVector[0] == State.MAIN_REGION_PARALLEL_R1_GRAB_OBJECT_R1_CATCH;
-		case MAIN_REGION_PARALLEL_R1_GRAB_OBJECT_R1_LOOK_FOR:
-			return stateVector[0] == State.MAIN_REGION_PARALLEL_R1_GRAB_OBJECT_R1_LOOK_FOR;
-		case MAIN_REGION_PARALLEL_R2_VIRTUAL_WALL:
-			return stateVector[1] == State.MAIN_REGION_PARALLEL_R2_VIRTUAL_WALL;
-		case MAIN_REGION_PARALLEL_R2_CLEAR:
-			return stateVector[1] == State.MAIN_REGION_PARALLEL_R2_CLEAR;
+					MAIN_REGION_WORKING.ordinal()&& stateVector[0].ordinal() <= State.MAIN_REGION_WORKING_R1_GRAB_OBJECT_R1_LOOK_FOR.ordinal();
+		case MAIN_REGION_WORKING_R1_CLEANING:
+			return stateVector[0] == State.MAIN_REGION_WORKING_R1_CLEANING;
+		case MAIN_REGION_WORKING_R1_GRAB_OBJECT:
+			return stateVector[0].ordinal() >= State.
+					MAIN_REGION_WORKING_R1_GRAB_OBJECT.ordinal()&& stateVector[0].ordinal() <= State.MAIN_REGION_WORKING_R1_GRAB_OBJECT_R1_LOOK_FOR.ordinal();
+		case MAIN_REGION_WORKING_R1_GRAB_OBJECT_R1_CATCH:
+			return stateVector[0] == State.MAIN_REGION_WORKING_R1_GRAB_OBJECT_R1_CATCH;
+		case MAIN_REGION_WORKING_R1_GRAB_OBJECT_R1_LOOK_FOR:
+			return stateVector[0] == State.MAIN_REGION_WORKING_R1_GRAB_OBJECT_R1_LOOK_FOR;
 		default:
 			return false;
 		}
@@ -517,154 +489,118 @@ public class RobotStatemachine implements IStatemachine {
 		return doFlushIRReceiverObservable;
 	}
 	
-	private double angle;
+	private boolean grabActivated;
 	
-	public synchronized double getAngle() {
+	public synchronized boolean getGrabActivated() {
 		synchronized(RobotStatemachine.this) {
-			return angle;
+			return grabActivated;
 		}
 	}
 	
-	public void setAngle(double value) {
+	public void setGrabActivated(boolean value) {
 		synchronized(RobotStatemachine.this) {
-			this.angle = value;
-		}
-	}
-	
-	private double distance;
-	
-	public synchronized double getDistance() {
-		synchronized(RobotStatemachine.this) {
-			return distance;
-		}
-	}
-	
-	public void setDistance(double value) {
-		synchronized(RobotStatemachine.this) {
-			this.distance = value;
-		}
-	}
-	
-	public static final double pI = 3.14;
-	
-	public synchronized double getPI() {
-		synchronized(RobotStatemachine.this) {
-			return pI;
+			this.grabActivated = value;
 		}
 	}
 	
 	/* Entry action for state 'LEFT_BLOCKED'. */
-	private void entryAction_main_region_PARALLEL_r1_PARTIALY_BLOCKED_r1_LEFT_BLOCKED() {
+	private void entryAction_main_region_BLOCKED_r1_PARTIALLY_BLOCKED_r1_LEFT_BLOCKED() {
 		raiseDoGoBackward();
 		
 		raiseDoTurnRandomlyRight();
 	}
 	
 	/* Entry action for state 'RIGHT_BLOCKED'. */
-	private void entryAction_main_region_PARALLEL_r1_PARTIALY_BLOCKED_r1_RIGHT_BLOCKED() {
+	private void entryAction_main_region_BLOCKED_r1_PARTIALLY_BLOCKED_r1_RIGHT_BLOCKED() {
 		raiseDoGoBackward();
 		
 		raiseDoTurnRandomlyLeft();
 	}
 	
-	/* Entry action for state 'MOVING'. */
-	private void entryAction_main_region_PARALLEL_r1_MOVING() {
-		raiseDoGoForward();
-	}
-	
 	/* Entry action for state 'BLOCKED'. */
-	private void entryAction_main_region_PARALLEL_r1_BLOCKED() {
+	private void entryAction_main_region_BLOCKED_r1_BLOCKED() {
 		raiseDoFullTurn();
 	}
 	
+	/* Entry action for state 'VIRTUAL_WALL'. */
+	private void entryAction_main_region_BLOCKED_r1_VIRTUAL_WALL() {
+		raiseDoFullTurn();
+	}
+	
+	/* Entry action for state 'CLEANING'. */
+	private void entryAction_main_region_WORKING_r1_CLEANING() {
+		raiseDoGoForward();
+	}
+	
 	/* Entry action for state 'CATCH'. */
-	private void entryAction_main_region_PARALLEL_r1_GRAB_OBJECT_r1_CATCH() {
+	private void entryAction_main_region_WORKING_r1_GRAB_OBJECT_r1_CATCH() {
 		raiseDoCatch();
 	}
 	
 	/* Entry action for state 'LOOK_FOR'. */
-	private void entryAction_main_region_PARALLEL_r1_GRAB_OBJECT_r1_LOOK_FOR() {
+	private void entryAction_main_region_WORKING_r1_GRAB_OBJECT_r1_LOOK_FOR() {
 		raiseDoGoTo();
 	}
 	
-	/* Entry action for state 'VIRTUAL_WALL'. */
-	private void entryAction_main_region_PARALLEL_r2_VIRTUAL_WALL() {
-		raiseDoFullTurn();
-	}
-	
-	/* 'default' enter sequence for state PARALLEL */
-	private void enterSequence_main_region_PARALLEL_default() {
-		enterSequence_main_region_PARALLEL_r1_default();
-		enterSequence_main_region_PARALLEL_r2_default();
-	}
-	
-	/* 'default' enter sequence for state PARTIALY_BLOCKED */
-	private void enterSequence_main_region_PARALLEL_r1_PARTIALY_BLOCKED_default() {
-		enterSequence_main_region_PARALLEL_r1_PARTIALY_BLOCKED_r1_default();
+	/* 'default' enter sequence for state PARTIALLY_BLOCKED */
+	private void enterSequence_main_region_BLOCKED_r1_PARTIALLY_BLOCKED_default() {
+		enterSequence_main_region_BLOCKED_r1_PARTIALLY_BLOCKED_r1_default();
 	}
 	
 	/* 'default' enter sequence for state LEFT_BLOCKED */
-	private void enterSequence_main_region_PARALLEL_r1_PARTIALY_BLOCKED_r1_LEFT_BLOCKED_default() {
-		entryAction_main_region_PARALLEL_r1_PARTIALY_BLOCKED_r1_LEFT_BLOCKED();
-		stateVector[0] = State.MAIN_REGION_PARALLEL_R1_PARTIALY_BLOCKED_R1_LEFT_BLOCKED;
-		stateConfVectorPosition = 0;
+	private void enterSequence_main_region_BLOCKED_r1_PARTIALLY_BLOCKED_r1_LEFT_BLOCKED_default() {
+		entryAction_main_region_BLOCKED_r1_PARTIALLY_BLOCKED_r1_LEFT_BLOCKED();
+		stateVector[0] = State.MAIN_REGION_BLOCKED_R1_PARTIALLY_BLOCKED_R1_LEFT_BLOCKED;
 		
 		historyVector[0] = stateVector[0];
 	}
 	
 	/* 'default' enter sequence for state RIGHT_BLOCKED */
-	private void enterSequence_main_region_PARALLEL_r1_PARTIALY_BLOCKED_r1_RIGHT_BLOCKED_default() {
-		entryAction_main_region_PARALLEL_r1_PARTIALY_BLOCKED_r1_RIGHT_BLOCKED();
-		stateVector[0] = State.MAIN_REGION_PARALLEL_R1_PARTIALY_BLOCKED_R1_RIGHT_BLOCKED;
-		stateConfVectorPosition = 0;
+	private void enterSequence_main_region_BLOCKED_r1_PARTIALLY_BLOCKED_r1_RIGHT_BLOCKED_default() {
+		entryAction_main_region_BLOCKED_r1_PARTIALLY_BLOCKED_r1_RIGHT_BLOCKED();
+		stateVector[0] = State.MAIN_REGION_BLOCKED_R1_PARTIALLY_BLOCKED_R1_RIGHT_BLOCKED;
 		
 		historyVector[0] = stateVector[0];
 	}
 	
-	/* 'default' enter sequence for state MOVING */
-	private void enterSequence_main_region_PARALLEL_r1_MOVING_default() {
-		entryAction_main_region_PARALLEL_r1_MOVING();
-		stateVector[0] = State.MAIN_REGION_PARALLEL_R1_MOVING;
-		stateConfVectorPosition = 0;
-	}
-	
 	/* 'default' enter sequence for state BLOCKED */
-	private void enterSequence_main_region_PARALLEL_r1_BLOCKED_default() {
-		entryAction_main_region_PARALLEL_r1_BLOCKED();
-		stateVector[0] = State.MAIN_REGION_PARALLEL_R1_BLOCKED;
-		stateConfVectorPosition = 0;
-	}
-	
-	/* 'default' enter sequence for state GRAB_OBJECT */
-	private void enterSequence_main_region_PARALLEL_r1_GRAB_OBJECT_default() {
-		enterSequence_main_region_PARALLEL_r1_GRAB_OBJECT_r1_default();
-	}
-	
-	/* 'default' enter sequence for state CATCH */
-	private void enterSequence_main_region_PARALLEL_r1_GRAB_OBJECT_r1_CATCH_default() {
-		entryAction_main_region_PARALLEL_r1_GRAB_OBJECT_r1_CATCH();
-		stateVector[0] = State.MAIN_REGION_PARALLEL_R1_GRAB_OBJECT_R1_CATCH;
-		stateConfVectorPosition = 0;
-	}
-	
-	/* 'default' enter sequence for state LOOK_FOR */
-	private void enterSequence_main_region_PARALLEL_r1_GRAB_OBJECT_r1_LOOK_FOR_default() {
-		entryAction_main_region_PARALLEL_r1_GRAB_OBJECT_r1_LOOK_FOR();
-		stateVector[0] = State.MAIN_REGION_PARALLEL_R1_GRAB_OBJECT_R1_LOOK_FOR;
-		stateConfVectorPosition = 0;
+	private void enterSequence_main_region_BLOCKED_r1_BLOCKED_default() {
+		entryAction_main_region_BLOCKED_r1_BLOCKED();
+		stateVector[0] = State.MAIN_REGION_BLOCKED_R1_BLOCKED;
 	}
 	
 	/* 'default' enter sequence for state VIRTUAL_WALL */
-	private void enterSequence_main_region_PARALLEL_r2_VIRTUAL_WALL_default() {
-		entryAction_main_region_PARALLEL_r2_VIRTUAL_WALL();
-		stateVector[1] = State.MAIN_REGION_PARALLEL_R2_VIRTUAL_WALL;
-		stateConfVectorPosition = 1;
+	private void enterSequence_main_region_BLOCKED_r1_VIRTUAL_WALL_default() {
+		entryAction_main_region_BLOCKED_r1_VIRTUAL_WALL();
+		stateVector[0] = State.MAIN_REGION_BLOCKED_R1_VIRTUAL_WALL;
 	}
 	
-	/* 'default' enter sequence for state CLEAR */
-	private void enterSequence_main_region_PARALLEL_r2_CLEAR_default() {
-		stateVector[1] = State.MAIN_REGION_PARALLEL_R2_CLEAR;
-		stateConfVectorPosition = 1;
+	/* 'default' enter sequence for state WORKING */
+	private void enterSequence_main_region_WORKING_default() {
+		enterSequence_main_region_WORKING_r1_default();
+	}
+	
+	/* 'default' enter sequence for state CLEANING */
+	private void enterSequence_main_region_WORKING_r1_CLEANING_default() {
+		entryAction_main_region_WORKING_r1_CLEANING();
+		stateVector[0] = State.MAIN_REGION_WORKING_R1_CLEANING;
+	}
+	
+	/* 'default' enter sequence for state GRAB_OBJECT */
+	private void enterSequence_main_region_WORKING_r1_GRAB_OBJECT_default() {
+		enterSequence_main_region_WORKING_r1_GRAB_OBJECT_r1_default();
+	}
+	
+	/* 'default' enter sequence for state CATCH */
+	private void enterSequence_main_region_WORKING_r1_GRAB_OBJECT_r1_CATCH_default() {
+		entryAction_main_region_WORKING_r1_GRAB_OBJECT_r1_CATCH();
+		stateVector[0] = State.MAIN_REGION_WORKING_R1_GRAB_OBJECT_R1_CATCH;
+	}
+	
+	/* 'default' enter sequence for state LOOK_FOR */
+	private void enterSequence_main_region_WORKING_r1_GRAB_OBJECT_r1_LOOK_FOR_default() {
+		entryAction_main_region_WORKING_r1_GRAB_OBJECT_r1_LOOK_FOR();
+		stateVector[0] = State.MAIN_REGION_WORKING_R1_GRAB_OBJECT_R1_LOOK_FOR;
 	}
 	
 	/* 'default' enter sequence for region main region */
@@ -673,23 +609,18 @@ public class RobotStatemachine implements IStatemachine {
 	}
 	
 	/* 'default' enter sequence for region r1 */
-	private void enterSequence_main_region_PARALLEL_r1_default() {
-		react_main_region_PARALLEL_r1__entry_Default();
-	}
-	
-	/* 'default' enter sequence for region r1 */
-	private void enterSequence_main_region_PARALLEL_r1_PARTIALY_BLOCKED_r1_default() {
-		react_main_region_PARALLEL_r1_PARTIALY_BLOCKED_r1__entry_Default();
+	private void enterSequence_main_region_BLOCKED_r1_PARTIALLY_BLOCKED_r1_default() {
+		react_main_region_BLOCKED_r1_PARTIALLY_BLOCKED_r1__entry_Default();
 	}
 	
 	/* deep enterSequence with history in child r1 */
-	private void deepEnterSequence_main_region_PARALLEL_r1_PARTIALY_BLOCKED_r1() {
+	private void deepEnterSequence_main_region_BLOCKED_r1_PARTIALLY_BLOCKED_r1() {
 		switch (historyVector[0]) {
-		case MAIN_REGION_PARALLEL_R1_PARTIALY_BLOCKED_R1_LEFT_BLOCKED:
-			enterSequence_main_region_PARALLEL_r1_PARTIALY_BLOCKED_r1_LEFT_BLOCKED_default();
+		case MAIN_REGION_BLOCKED_R1_PARTIALLY_BLOCKED_R1_LEFT_BLOCKED:
+			enterSequence_main_region_BLOCKED_r1_PARTIALLY_BLOCKED_r1_LEFT_BLOCKED_default();
 			break;
-		case MAIN_REGION_PARALLEL_R1_PARTIALY_BLOCKED_R1_RIGHT_BLOCKED:
-			enterSequence_main_region_PARALLEL_r1_PARTIALY_BLOCKED_r1_RIGHT_BLOCKED_default();
+		case MAIN_REGION_BLOCKED_R1_PARTIALLY_BLOCKED_R1_RIGHT_BLOCKED:
+			enterSequence_main_region_BLOCKED_r1_PARTIALLY_BLOCKED_r1_RIGHT_BLOCKED_default();
 			break;
 		default:
 			break;
@@ -697,104 +628,93 @@ public class RobotStatemachine implements IStatemachine {
 	}
 	
 	/* 'default' enter sequence for region r1 */
-	private void enterSequence_main_region_PARALLEL_r1_GRAB_OBJECT_r1_default() {
-		react_main_region_PARALLEL_r1_GRAB_OBJECT_r1__entry_Default();
+	private void enterSequence_main_region_WORKING_r1_default() {
+		react_main_region_WORKING_r1__entry_Default();
 	}
 	
-	/* 'default' enter sequence for region r2 */
-	private void enterSequence_main_region_PARALLEL_r2_default() {
-		react_main_region_PARALLEL_r2__entry_Default();
-	}
-	
-	/* Default exit sequence for state PARTIALY_BLOCKED */
-	private void exitSequence_main_region_PARALLEL_r1_PARTIALY_BLOCKED() {
-		exitSequence_main_region_PARALLEL_r1_PARTIALY_BLOCKED_r1();
-	}
-	
-	/* Default exit sequence for state LEFT_BLOCKED */
-	private void exitSequence_main_region_PARALLEL_r1_PARTIALY_BLOCKED_r1_LEFT_BLOCKED() {
-		stateVector[0] = State.$NULLSTATE$;
-		stateConfVectorPosition = 0;
-	}
-	
-	/* Default exit sequence for state RIGHT_BLOCKED */
-	private void exitSequence_main_region_PARALLEL_r1_PARTIALY_BLOCKED_r1_RIGHT_BLOCKED() {
-		stateVector[0] = State.$NULLSTATE$;
-		stateConfVectorPosition = 0;
-	}
-	
-	/* Default exit sequence for state MOVING */
-	private void exitSequence_main_region_PARALLEL_r1_MOVING() {
-		stateVector[0] = State.$NULLSTATE$;
-		stateConfVectorPosition = 0;
+	/* 'default' enter sequence for region r1 */
+	private void enterSequence_main_region_WORKING_r1_GRAB_OBJECT_r1_default() {
+		react_main_region_WORKING_r1_GRAB_OBJECT_r1__entry_Default();
 	}
 	
 	/* Default exit sequence for state BLOCKED */
-	private void exitSequence_main_region_PARALLEL_r1_BLOCKED() {
-		stateVector[0] = State.$NULLSTATE$;
-		stateConfVectorPosition = 0;
+	private void exitSequence_main_region_BLOCKED() {
+		exitSequence_main_region_BLOCKED_r1();
 	}
 	
-	/* Default exit sequence for state GRAB_OBJECT */
-	private void exitSequence_main_region_PARALLEL_r1_GRAB_OBJECT() {
-		exitSequence_main_region_PARALLEL_r1_GRAB_OBJECT_r1();
+	/* Default exit sequence for state PARTIALLY_BLOCKED */
+	private void exitSequence_main_region_BLOCKED_r1_PARTIALLY_BLOCKED() {
+		exitSequence_main_region_BLOCKED_r1_PARTIALLY_BLOCKED_r1();
 	}
 	
-	/* Default exit sequence for state CATCH */
-	private void exitSequence_main_region_PARALLEL_r1_GRAB_OBJECT_r1_CATCH() {
+	/* Default exit sequence for state LEFT_BLOCKED */
+	private void exitSequence_main_region_BLOCKED_r1_PARTIALLY_BLOCKED_r1_LEFT_BLOCKED() {
 		stateVector[0] = State.$NULLSTATE$;
-		stateConfVectorPosition = 0;
 	}
 	
-	/* Default exit sequence for state LOOK_FOR */
-	private void exitSequence_main_region_PARALLEL_r1_GRAB_OBJECT_r1_LOOK_FOR() {
+	/* Default exit sequence for state RIGHT_BLOCKED */
+	private void exitSequence_main_region_BLOCKED_r1_PARTIALLY_BLOCKED_r1_RIGHT_BLOCKED() {
 		stateVector[0] = State.$NULLSTATE$;
-		stateConfVectorPosition = 0;
+	}
+	
+	/* Default exit sequence for state BLOCKED */
+	private void exitSequence_main_region_BLOCKED_r1_BLOCKED() {
+		stateVector[0] = State.$NULLSTATE$;
 	}
 	
 	/* Default exit sequence for state VIRTUAL_WALL */
-	private void exitSequence_main_region_PARALLEL_r2_VIRTUAL_WALL() {
-		stateVector[1] = State.$NULLSTATE$;
-		stateConfVectorPosition = 1;
+	private void exitSequence_main_region_BLOCKED_r1_VIRTUAL_WALL() {
+		stateVector[0] = State.$NULLSTATE$;
 	}
 	
-	/* Default exit sequence for state CLEAR */
-	private void exitSequence_main_region_PARALLEL_r2_CLEAR() {
-		stateVector[1] = State.$NULLSTATE$;
-		stateConfVectorPosition = 1;
+	/* Default exit sequence for state WORKING */
+	private void exitSequence_main_region_WORKING() {
+		exitSequence_main_region_WORKING_r1();
+	}
+	
+	/* Default exit sequence for state CLEANING */
+	private void exitSequence_main_region_WORKING_r1_CLEANING() {
+		stateVector[0] = State.$NULLSTATE$;
+	}
+	
+	/* Default exit sequence for state GRAB_OBJECT */
+	private void exitSequence_main_region_WORKING_r1_GRAB_OBJECT() {
+		exitSequence_main_region_WORKING_r1_GRAB_OBJECT_r1();
+	}
+	
+	/* Default exit sequence for state CATCH */
+	private void exitSequence_main_region_WORKING_r1_GRAB_OBJECT_r1_CATCH() {
+		stateVector[0] = State.$NULLSTATE$;
+	}
+	
+	/* Default exit sequence for state LOOK_FOR */
+	private void exitSequence_main_region_WORKING_r1_GRAB_OBJECT_r1_LOOK_FOR() {
+		stateVector[0] = State.$NULLSTATE$;
 	}
 	
 	/* Default exit sequence for region main region */
 	private void exitSequence_main_region() {
 		switch (stateVector[0]) {
-		case MAIN_REGION_PARALLEL_R1_PARTIALY_BLOCKED_R1_LEFT_BLOCKED:
-			exitSequence_main_region_PARALLEL_r1_PARTIALY_BLOCKED_r1_LEFT_BLOCKED();
+		case MAIN_REGION_BLOCKED_R1_PARTIALLY_BLOCKED_R1_LEFT_BLOCKED:
+			exitSequence_main_region_BLOCKED_r1_PARTIALLY_BLOCKED_r1_LEFT_BLOCKED();
 			break;
-		case MAIN_REGION_PARALLEL_R1_PARTIALY_BLOCKED_R1_RIGHT_BLOCKED:
-			exitSequence_main_region_PARALLEL_r1_PARTIALY_BLOCKED_r1_RIGHT_BLOCKED();
+		case MAIN_REGION_BLOCKED_R1_PARTIALLY_BLOCKED_R1_RIGHT_BLOCKED:
+			exitSequence_main_region_BLOCKED_r1_PARTIALLY_BLOCKED_r1_RIGHT_BLOCKED();
 			break;
-		case MAIN_REGION_PARALLEL_R1_MOVING:
-			exitSequence_main_region_PARALLEL_r1_MOVING();
+		case MAIN_REGION_BLOCKED_R1_BLOCKED:
+			exitSequence_main_region_BLOCKED_r1_BLOCKED();
 			break;
-		case MAIN_REGION_PARALLEL_R1_BLOCKED:
-			exitSequence_main_region_PARALLEL_r1_BLOCKED();
+		case MAIN_REGION_BLOCKED_R1_VIRTUAL_WALL:
+			exitSequence_main_region_BLOCKED_r1_VIRTUAL_WALL();
 			break;
-		case MAIN_REGION_PARALLEL_R1_GRAB_OBJECT_R1_CATCH:
-			exitSequence_main_region_PARALLEL_r1_GRAB_OBJECT_r1_CATCH();
+		case MAIN_REGION_WORKING_R1_CLEANING:
+			exitSequence_main_region_WORKING_r1_CLEANING();
 			break;
-		case MAIN_REGION_PARALLEL_R1_GRAB_OBJECT_R1_LOOK_FOR:
-			exitSequence_main_region_PARALLEL_r1_GRAB_OBJECT_r1_LOOK_FOR();
+		case MAIN_REGION_WORKING_R1_GRAB_OBJECT_R1_CATCH:
+			exitSequence_main_region_WORKING_r1_GRAB_OBJECT_r1_CATCH();
 			break;
-		default:
-			break;
-		}
-		
-		switch (stateVector[1]) {
-		case MAIN_REGION_PARALLEL_R2_VIRTUAL_WALL:
-			exitSequence_main_region_PARALLEL_r2_VIRTUAL_WALL();
-			break;
-		case MAIN_REGION_PARALLEL_R2_CLEAR:
-			exitSequence_main_region_PARALLEL_r2_CLEAR();
+		case MAIN_REGION_WORKING_R1_GRAB_OBJECT_R1_LOOK_FOR:
+			exitSequence_main_region_WORKING_r1_GRAB_OBJECT_r1_LOOK_FOR();
 			break;
 		default:
 			break;
@@ -802,13 +722,19 @@ public class RobotStatemachine implements IStatemachine {
 	}
 	
 	/* Default exit sequence for region r1 */
-	private void exitSequence_main_region_PARALLEL_r1_PARTIALY_BLOCKED_r1() {
+	private void exitSequence_main_region_BLOCKED_r1() {
 		switch (stateVector[0]) {
-		case MAIN_REGION_PARALLEL_R1_PARTIALY_BLOCKED_R1_LEFT_BLOCKED:
-			exitSequence_main_region_PARALLEL_r1_PARTIALY_BLOCKED_r1_LEFT_BLOCKED();
+		case MAIN_REGION_BLOCKED_R1_PARTIALLY_BLOCKED_R1_LEFT_BLOCKED:
+			exitSequence_main_region_BLOCKED_r1_PARTIALLY_BLOCKED_r1_LEFT_BLOCKED();
 			break;
-		case MAIN_REGION_PARALLEL_R1_PARTIALY_BLOCKED_R1_RIGHT_BLOCKED:
-			exitSequence_main_region_PARALLEL_r1_PARTIALY_BLOCKED_r1_RIGHT_BLOCKED();
+		case MAIN_REGION_BLOCKED_R1_PARTIALLY_BLOCKED_R1_RIGHT_BLOCKED:
+			exitSequence_main_region_BLOCKED_r1_PARTIALLY_BLOCKED_r1_RIGHT_BLOCKED();
+			break;
+		case MAIN_REGION_BLOCKED_R1_BLOCKED:
+			exitSequence_main_region_BLOCKED_r1_BLOCKED();
+			break;
+		case MAIN_REGION_BLOCKED_R1_VIRTUAL_WALL:
+			exitSequence_main_region_BLOCKED_r1_VIRTUAL_WALL();
 			break;
 		default:
 			break;
@@ -816,13 +742,44 @@ public class RobotStatemachine implements IStatemachine {
 	}
 	
 	/* Default exit sequence for region r1 */
-	private void exitSequence_main_region_PARALLEL_r1_GRAB_OBJECT_r1() {
+	private void exitSequence_main_region_BLOCKED_r1_PARTIALLY_BLOCKED_r1() {
 		switch (stateVector[0]) {
-		case MAIN_REGION_PARALLEL_R1_GRAB_OBJECT_R1_CATCH:
-			exitSequence_main_region_PARALLEL_r1_GRAB_OBJECT_r1_CATCH();
+		case MAIN_REGION_BLOCKED_R1_PARTIALLY_BLOCKED_R1_LEFT_BLOCKED:
+			exitSequence_main_region_BLOCKED_r1_PARTIALLY_BLOCKED_r1_LEFT_BLOCKED();
 			break;
-		case MAIN_REGION_PARALLEL_R1_GRAB_OBJECT_R1_LOOK_FOR:
-			exitSequence_main_region_PARALLEL_r1_GRAB_OBJECT_r1_LOOK_FOR();
+		case MAIN_REGION_BLOCKED_R1_PARTIALLY_BLOCKED_R1_RIGHT_BLOCKED:
+			exitSequence_main_region_BLOCKED_r1_PARTIALLY_BLOCKED_r1_RIGHT_BLOCKED();
+			break;
+		default:
+			break;
+		}
+	}
+	
+	/* Default exit sequence for region r1 */
+	private void exitSequence_main_region_WORKING_r1() {
+		switch (stateVector[0]) {
+		case MAIN_REGION_WORKING_R1_CLEANING:
+			exitSequence_main_region_WORKING_r1_CLEANING();
+			break;
+		case MAIN_REGION_WORKING_R1_GRAB_OBJECT_R1_CATCH:
+			exitSequence_main_region_WORKING_r1_GRAB_OBJECT_r1_CATCH();
+			break;
+		case MAIN_REGION_WORKING_R1_GRAB_OBJECT_R1_LOOK_FOR:
+			exitSequence_main_region_WORKING_r1_GRAB_OBJECT_r1_LOOK_FOR();
+			break;
+		default:
+			break;
+		}
+	}
+	
+	/* Default exit sequence for region r1 */
+	private void exitSequence_main_region_WORKING_r1_GRAB_OBJECT_r1() {
+		switch (stateVector[0]) {
+		case MAIN_REGION_WORKING_R1_GRAB_OBJECT_R1_CATCH:
+			exitSequence_main_region_WORKING_r1_GRAB_OBJECT_r1_CATCH();
+			break;
+		case MAIN_REGION_WORKING_R1_GRAB_OBJECT_R1_LOOK_FOR:
+			exitSequence_main_region_WORKING_r1_GRAB_OBJECT_r1_LOOK_FOR();
 			break;
 		default:
 			break;
@@ -830,43 +787,45 @@ public class RobotStatemachine implements IStatemachine {
 	}
 	
 	/* Default react sequence for deep history entry  */
-	private void react_main_region_PARALLEL_r1_PARTIALY_BLOCKED_r1__entry_Default() {
+	private void react_main_region_BLOCKED_r1_PARTIALLY_BLOCKED_r1__entry_Default() {
 		/* Enter the region with deep history */
 		if (historyVector[0] != State.$NULLSTATE$) {
-			deepEnterSequence_main_region_PARALLEL_r1_PARTIALY_BLOCKED_r1();
+			deepEnterSequence_main_region_BLOCKED_r1_PARTIALLY_BLOCKED_r1();
 		} else {
-			enterSequence_main_region_PARALLEL_r1_PARTIALY_BLOCKED_r1_LEFT_BLOCKED_default();
+			enterSequence_main_region_BLOCKED_r1_PARTIALLY_BLOCKED_r1_LEFT_BLOCKED_default();
 		}
 	}
 	
 	/* Default react sequence for initial entry  */
-	private void react_main_region_PARALLEL_r1__entry_Default() {
-		enterSequence_main_region_PARALLEL_r1_MOVING_default();
+	private void react_main_region_WORKING_r1__entry_Default() {
+		enterSequence_main_region_WORKING_r1_CLEANING_default();
 	}
 	
 	/* Default react sequence for initial entry  */
-	private void react_main_region_PARALLEL_r1_GRAB_OBJECT_r1__entry_Default() {
-		enterSequence_main_region_PARALLEL_r1_GRAB_OBJECT_r1_LOOK_FOR_default();
-	}
-	
-	/* Default react sequence for initial entry  */
-	private void react_main_region_PARALLEL_r2__entry_Default() {
-		enterSequence_main_region_PARALLEL_r2_CLEAR_default();
+	private void react_main_region_WORKING_r1_GRAB_OBJECT_r1__entry_Default() {
+		enterSequence_main_region_WORKING_r1_GRAB_OBJECT_r1_LOOK_FOR_default();
 	}
 	
 	/* Default react sequence for initial entry  */
 	private void react_main_region__entry_Default() {
-		enterSequence_main_region_PARALLEL_default();
+		enterSequence_main_region_WORKING_default();
 	}
 	
 	private long react(long transitioned_before) {
 		return transitioned_before;
 	}
 	
-	private long main_region_PARALLEL_react(long transitioned_before) {
+	private long main_region_BLOCKED_react(long transitioned_before) {
 		long transitioned_after = transitioned_before;
 		
 		if (transitioned_after<0) {
+			if (clear) {
+				exitSequence_main_region_BLOCKED();
+				enterSequence_main_region_WORKING_default();
+				react(0);
+				
+				transitioned_after = 0;
+			}
 		}
 		/* If no transition was taken then execute local reactions */
 		if (transitioned_after==transitioned_before) {
@@ -875,226 +834,234 @@ public class RobotStatemachine implements IStatemachine {
 		return transitioned_after;
 	}
 	
-	private long main_region_PARALLEL_r1_PARTIALY_BLOCKED_react(long transitioned_before) {
-		long transitioned_after = transitioned_before;
-		
-		if (transitioned_after<0) {
-			if (clear) {
-				exitSequence_main_region_PARALLEL_r1_PARTIALY_BLOCKED();
-				enterSequence_main_region_PARALLEL_r1_MOVING_default();
-				transitioned_after = 0;
-			} else {
-				if (frontR) {
-					exitSequence_main_region_PARALLEL_r1_PARTIALY_BLOCKED();
-					enterSequence_main_region_PARALLEL_r1_PARTIALY_BLOCKED_default();
-					transitioned_after = 0;
-				} else {
-					if (frontL) {
-						exitSequence_main_region_PARALLEL_r1_PARTIALY_BLOCKED();
-						enterSequence_main_region_PARALLEL_r1_PARTIALY_BLOCKED_default();
-						transitioned_after = 0;
-					} else {
-						if (front) {
-							exitSequence_main_region_PARALLEL_r1_PARTIALY_BLOCKED();
-							enterSequence_main_region_PARALLEL_r1_PARTIALY_BLOCKED_default();
-							transitioned_after = 0;
-						}
-					}
-				}
-			}
-		}
-		return transitioned_after;
-	}
-	
-	private long main_region_PARALLEL_r1_PARTIALY_BLOCKED_r1_LEFT_BLOCKED_react(long transitioned_before) {
+	private long main_region_BLOCKED_r1_PARTIALLY_BLOCKED_react(long transitioned_before) {
 		long transitioned_after = transitioned_before;
 		
 		if (transitioned_after<0) {
 			if (frontR) {
-				exitSequence_main_region_PARALLEL_r1_PARTIALY_BLOCKED();
-				enterSequence_main_region_PARALLEL_r1_BLOCKED_default();
+				exitSequence_main_region_BLOCKED_r1_PARTIALLY_BLOCKED();
+				enterSequence_main_region_BLOCKED_r1_PARTIALLY_BLOCKED_default();
+				main_region_BLOCKED_react(0);
+				
 				transitioned_after = 0;
 			} else {
-				if (front) {
-					exitSequence_main_region_PARALLEL_r1_PARTIALY_BLOCKED();
-					enterSequence_main_region_PARALLEL_r1_BLOCKED_default();
+				if (frontL) {
+					exitSequence_main_region_BLOCKED_r1_PARTIALLY_BLOCKED();
+					enterSequence_main_region_BLOCKED_r1_PARTIALLY_BLOCKED_default();
+					main_region_BLOCKED_react(0);
+					
+					transitioned_after = 0;
+				} else {
+					if (front) {
+						exitSequence_main_region_BLOCKED_r1_PARTIALLY_BLOCKED();
+						enterSequence_main_region_BLOCKED_r1_PARTIALLY_BLOCKED_default();
+						main_region_BLOCKED_react(0);
+						
+						transitioned_after = 0;
+					}
+				}
+			}
+		}
+		/* If no transition was taken then execute local reactions */
+		if (transitioned_after==transitioned_before) {
+			transitioned_after = main_region_BLOCKED_react(transitioned_before);
+		}
+		return transitioned_after;
+	}
+	
+	private long main_region_BLOCKED_r1_PARTIALLY_BLOCKED_r1_LEFT_BLOCKED_react(long transitioned_before) {
+		long transitioned_after = transitioned_before;
+		
+		if (transitioned_after<0) {
+			if (front) {
+				exitSequence_main_region_BLOCKED_r1_PARTIALLY_BLOCKED();
+				enterSequence_main_region_BLOCKED_r1_BLOCKED_default();
+				main_region_BLOCKED_react(0);
+				
+				transitioned_after = 0;
+			} else {
+				if (frontR) {
+					exitSequence_main_region_BLOCKED_r1_PARTIALLY_BLOCKED();
+					enterSequence_main_region_BLOCKED_r1_BLOCKED_default();
+					main_region_BLOCKED_react(0);
+					
 					transitioned_after = 0;
 				}
 			}
 		}
 		/* If no transition was taken then execute local reactions */
 		if (transitioned_after==transitioned_before) {
-			transitioned_after = main_region_PARALLEL_r1_PARTIALY_BLOCKED_react(transitioned_before);
+			transitioned_after = main_region_BLOCKED_r1_PARTIALLY_BLOCKED_react(transitioned_before);
 		}
 		return transitioned_after;
 	}
 	
-	private long main_region_PARALLEL_r1_PARTIALY_BLOCKED_r1_RIGHT_BLOCKED_react(long transitioned_before) {
+	private long main_region_BLOCKED_r1_PARTIALLY_BLOCKED_r1_RIGHT_BLOCKED_react(long transitioned_before) {
 		long transitioned_after = transitioned_before;
 		
 		if (transitioned_after<0) {
 			if (frontL) {
-				exitSequence_main_region_PARALLEL_r1_PARTIALY_BLOCKED();
-				enterSequence_main_region_PARALLEL_r1_BLOCKED_default();
+				exitSequence_main_region_BLOCKED_r1_PARTIALLY_BLOCKED();
+				enterSequence_main_region_BLOCKED_r1_BLOCKED_default();
+				main_region_BLOCKED_react(0);
+				
 				transitioned_after = 0;
 			}
 		}
 		/* If no transition was taken then execute local reactions */
 		if (transitioned_after==transitioned_before) {
-			transitioned_after = main_region_PARALLEL_r1_PARTIALY_BLOCKED_react(transitioned_before);
+			transitioned_after = main_region_BLOCKED_r1_PARTIALLY_BLOCKED_react(transitioned_before);
 		}
 		return transitioned_after;
 	}
 	
-	private long main_region_PARALLEL_r1_MOVING_react(long transitioned_before) {
+	private long main_region_BLOCKED_r1_BLOCKED_react(long transitioned_before) {
 		long transitioned_after = transitioned_before;
 		
 		if (transitioned_after<0) {
-			if (clear) {
-				exitSequence_main_region_PARALLEL_r1_MOVING();
-				enterSequence_main_region_PARALLEL_r1_MOVING_default();
+		}
+		/* If no transition was taken then execute local reactions */
+		if (transitioned_after==transitioned_before) {
+			transitioned_after = main_region_BLOCKED_react(transitioned_before);
+		}
+		return transitioned_after;
+	}
+	
+	private long main_region_BLOCKED_r1_VIRTUAL_WALL_react(long transitioned_before) {
+		long transitioned_after = transitioned_before;
+		
+		if (transitioned_after<0) {
+		}
+		/* If no transition was taken then execute local reactions */
+		if (transitioned_after==transitioned_before) {
+			transitioned_after = main_region_BLOCKED_react(transitioned_before);
+		}
+		return transitioned_after;
+	}
+	
+	private long main_region_WORKING_react(long transitioned_before) {
+		long transitioned_after = transitioned_before;
+		
+		if (transitioned_after<0) {
+			if (frontR) {
+				exitSequence_main_region_WORKING();
+				enterSequence_main_region_BLOCKED_r1_PARTIALLY_BLOCKED_r1_RIGHT_BLOCKED_default();
+				react(0);
+				
 				transitioned_after = 0;
 			} else {
-				if (frontL) {
-					exitSequence_main_region_PARALLEL_r1_MOVING();
-					enterSequence_main_region_PARALLEL_r1_PARTIALY_BLOCKED_r1_LEFT_BLOCKED_default();
+				if (front) {
+					exitSequence_main_region_WORKING();
+					enterSequence_main_region_BLOCKED_r1_PARTIALLY_BLOCKED_r1_RIGHT_BLOCKED_default();
+					react(0);
+					
 					transitioned_after = 0;
 				} else {
-					if (frontR) {
-						exitSequence_main_region_PARALLEL_r1_MOVING();
-						enterSequence_main_region_PARALLEL_r1_PARTIALY_BLOCKED_r1_RIGHT_BLOCKED_default();
+					if (frontL) {
+						exitSequence_main_region_WORKING();
+						enterSequence_main_region_BLOCKED_r1_PARTIALLY_BLOCKED_r1_LEFT_BLOCKED_default();
+						react(0);
+						
 						transitioned_after = 0;
 					} else {
-						if (front) {
-							exitSequence_main_region_PARALLEL_r1_MOVING();
-							enterSequence_main_region_PARALLEL_r1_PARTIALY_BLOCKED_r1_RIGHT_BLOCKED_default();
+						if (virtualWall) {
+							exitSequence_main_region_WORKING();
+							enterSequence_main_region_BLOCKED_r1_VIRTUAL_WALL_default();
+							react(0);
+							
 							transitioned_after = 0;
-						} else {
-							if (goToEvent) {
-								exitSequence_main_region_PARALLEL_r1_MOVING();
-								enterSequence_main_region_PARALLEL_r1_GRAB_OBJECT_default();
-								transitioned_after = 0;
-							}
 						}
 					}
 				}
 			}
 		}
-		return transitioned_after;
-	}
-	
-	private long main_region_PARALLEL_r1_BLOCKED_react(long transitioned_before) {
-		long transitioned_after = transitioned_before;
-		
-		if (transitioned_after<0) {
-			if (clear) {
-				exitSequence_main_region_PARALLEL_r1_BLOCKED();
-				enterSequence_main_region_PARALLEL_r1_MOVING_default();
-				transitioned_after = 0;
-			}
+		/* If no transition was taken then execute local reactions */
+		if (transitioned_after==transitioned_before) {
+			transitioned_after = react(transitioned_before);
 		}
 		return transitioned_after;
 	}
 	
-	private long main_region_PARALLEL_r1_GRAB_OBJECT_react(long transitioned_before) {
+	private long main_region_WORKING_r1_CLEANING_react(long transitioned_before) {
 		long transitioned_after = transitioned_before;
 		
 		if (transitioned_after<0) {
-			if (gotIt) {
-				exitSequence_main_region_PARALLEL_r1_GRAB_OBJECT();
-				enterSequence_main_region_PARALLEL_r1_MOVING_default();
-				transitioned_after = 0;
-			}
-		}
-		return transitioned_after;
-	}
-	
-	private long main_region_PARALLEL_r1_GRAB_OBJECT_r1_CATCH_react(long transitioned_before) {
-		long transitioned_after = transitioned_before;
-		
-		if (transitioned_after<0) {
-			if (catchEvent) {
-				exitSequence_main_region_PARALLEL_r1_GRAB_OBJECT_r1_CATCH();
-				enterSequence_main_region_PARALLEL_r1_GRAB_OBJECT_r1_CATCH_default();
-				main_region_PARALLEL_r1_GRAB_OBJECT_react(0);
+			if (((goToEvent) && (getGrabActivated()))) {
+				exitSequence_main_region_WORKING_r1_CLEANING();
+				enterSequence_main_region_WORKING_r1_GRAB_OBJECT_default();
+				main_region_WORKING_react(0);
 				
 				transitioned_after = 0;
 			}
 		}
 		/* If no transition was taken then execute local reactions */
 		if (transitioned_after==transitioned_before) {
-			transitioned_after = main_region_PARALLEL_r1_GRAB_OBJECT_react(transitioned_before);
+			transitioned_after = main_region_WORKING_react(transitioned_before);
 		}
 		return transitioned_after;
 	}
 	
-	private long main_region_PARALLEL_r1_GRAB_OBJECT_r1_LOOK_FOR_react(long transitioned_before) {
+	private long main_region_WORKING_r1_GRAB_OBJECT_react(long transitioned_before) {
+		long transitioned_after = transitioned_before;
+		
+		if (transitioned_after<0) {
+			if (gotIt) {
+				exitSequence_main_region_WORKING_r1_GRAB_OBJECT();
+				enterSequence_main_region_WORKING_r1_CLEANING_default();
+				main_region_WORKING_react(0);
+				
+				transitioned_after = 0;
+			}
+		}
+		/* If no transition was taken then execute local reactions */
+		if (transitioned_after==transitioned_before) {
+			transitioned_after = main_region_WORKING_react(transitioned_before);
+		}
+		return transitioned_after;
+	}
+	
+	private long main_region_WORKING_r1_GRAB_OBJECT_r1_CATCH_react(long transitioned_before) {
+		long transitioned_after = transitioned_before;
+		
+		if (transitioned_after<0) {
+			if (catchEvent) {
+				exitSequence_main_region_WORKING_r1_GRAB_OBJECT_r1_CATCH();
+				enterSequence_main_region_WORKING_r1_GRAB_OBJECT_r1_CATCH_default();
+				main_region_WORKING_r1_GRAB_OBJECT_react(0);
+				
+				transitioned_after = 0;
+			}
+		}
+		/* If no transition was taken then execute local reactions */
+		if (transitioned_after==transitioned_before) {
+			transitioned_after = main_region_WORKING_r1_GRAB_OBJECT_react(transitioned_before);
+		}
+		return transitioned_after;
+	}
+	
+	private long main_region_WORKING_r1_GRAB_OBJECT_r1_LOOK_FOR_react(long transitioned_before) {
 		long transitioned_after = transitioned_before;
 		
 		if (transitioned_after<0) {
 			if (goToEvent) {
-				exitSequence_main_region_PARALLEL_r1_GRAB_OBJECT_r1_LOOK_FOR();
-				enterSequence_main_region_PARALLEL_r1_GRAB_OBJECT_r1_LOOK_FOR_default();
-				main_region_PARALLEL_r1_GRAB_OBJECT_react(0);
+				exitSequence_main_region_WORKING_r1_GRAB_OBJECT_r1_LOOK_FOR();
+				enterSequence_main_region_WORKING_r1_GRAB_OBJECT_r1_LOOK_FOR_default();
+				main_region_WORKING_r1_GRAB_OBJECT_react(0);
 				
 				transitioned_after = 0;
 			} else {
 				if (catchEvent) {
-					exitSequence_main_region_PARALLEL_r1_GRAB_OBJECT_r1_LOOK_FOR();
-					enterSequence_main_region_PARALLEL_r1_GRAB_OBJECT_r1_CATCH_default();
-					main_region_PARALLEL_r1_GRAB_OBJECT_react(0);
+					exitSequence_main_region_WORKING_r1_GRAB_OBJECT_r1_LOOK_FOR();
+					enterSequence_main_region_WORKING_r1_GRAB_OBJECT_r1_CATCH_default();
+					main_region_WORKING_r1_GRAB_OBJECT_react(0);
 					
 					transitioned_after = 0;
-				} else {
-					if (clear) {
-						exitSequence_main_region_PARALLEL_r1_GRAB_OBJECT();
-						enterSequence_main_region_PARALLEL_r1_MOVING_default();
-						transitioned_after = 0;
-					}
 				}
 			}
 		}
 		/* If no transition was taken then execute local reactions */
 		if (transitioned_after==transitioned_before) {
-			transitioned_after = main_region_PARALLEL_r1_GRAB_OBJECT_react(transitioned_before);
-		}
-		return transitioned_after;
-	}
-	
-	private long main_region_PARALLEL_r2_VIRTUAL_WALL_react(long transitioned_before) {
-		long transitioned_after = transitioned_before;
-		
-		if (transitioned_after<1) {
-			if (clear) {
-				exitSequence_main_region_PARALLEL_r2_VIRTUAL_WALL();
-				enterSequence_main_region_PARALLEL_r2_CLEAR_default();
-				main_region_PARALLEL_react(0);
-				
-				transitioned_after = 1;
-			}
-		}
-		/* If no transition was taken then execute local reactions */
-		if (transitioned_after==transitioned_before) {
-			transitioned_after = main_region_PARALLEL_react(transitioned_before);
-		}
-		return transitioned_after;
-	}
-	
-	private long main_region_PARALLEL_r2_CLEAR_react(long transitioned_before) {
-		long transitioned_after = transitioned_before;
-		
-		if (transitioned_after<1) {
-			if (virtualWall) {
-				exitSequence_main_region_PARALLEL_r2_CLEAR();
-				enterSequence_main_region_PARALLEL_r2_VIRTUAL_WALL_default();
-				main_region_PARALLEL_react(0);
-				
-				transitioned_after = 1;
-			}
-		}
-		/* If no transition was taken then execute local reactions */
-		if (transitioned_after==transitioned_before) {
-			transitioned_after = main_region_PARALLEL_react(transitioned_before);
+			transitioned_after = main_region_WORKING_r1_GRAB_OBJECT_react(transitioned_before);
 		}
 		return transitioned_after;
 	}

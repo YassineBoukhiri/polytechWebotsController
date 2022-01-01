@@ -11,8 +11,8 @@ WorldInfo {
   coordinateSystem "NUE"
 }
 Viewpoint {
-  orientation 0.7891168341470308 0.4696414656507654 0.3958933136681755 4.646420788454056
-  position -3.2097635254753927 13.495365341695095 5.83977323207455
+  orientation 0.7908693603383237 0.46593691125744024 0.39677254139610896 4.638520835158328
+  position -3.155698322165908 13.51253758852321 5.7994523591156675
   near 0.1
   follow "Create"
 }
@@ -214,7 +214,7 @@ CreateWall {
   rotation 3.9271627561560546e-17 1 -2.3423118527612687e-17 1.5708000000000002
 }
 DEF IROBOT_CREATE Robot {
-  translation -0.0192779 0.0228598 4.34325
+  translation -0.0192751 0.0217502 4.38323
   rotation 0.9994666692397797 0.0029869773387818563 -0.03251853387098509 0.027758964378735217
   children [
     DEF BODY_SLOT Group {
@@ -413,7 +413,7 @@ DEF IROBOT_CREATE Robot {
               ]
               endPoint Solid {
                 translation 0 0 0.058
-                rotation 1 0 0 0.34300013677790575
+                rotation 1 0 0 0.343000136777907
                 children [
                   DEF FINGER_SHAPE Transform {
                     translation -0.0007002 0.0360533 -0.0141252
@@ -717,7 +717,7 @@ DEF IROBOT_CREATE Robot {
               ]
               endPoint Solid {
                 translation 0 0 0.058
-                rotation -9.069489938179434e-14 0.17066103443813024 0.985329798252599 3.14159
+                rotation -9.070410752990405e-14 0.17066103443813005 0.985329798252599 3.14159
                 children [
                   USE FINGER_SHAPE
                   USE FINGER_CONNECTOR_SHAPE
@@ -1011,7 +1011,7 @@ DEF IROBOT_CREATE Robot {
         }
       ]
       endPoint DEF CREATE_RIGHT_WHEEL Solid {
-        translation 0.13587799999999944 -0.014 0.006176
+        translation 0.13587799999999983 -0.014 0.006176
         rotation -0.9999999999999999 0 0 1.9199994713672615
         children [
           Transform {
