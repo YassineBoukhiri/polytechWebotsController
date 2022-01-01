@@ -103,7 +103,7 @@ public class PolyCreateControler extends Supervisor {
 		timestep = (int) Math.round(this.getBasicTimeStep());
 
 		pen = createPen("pen");
-
+		
 		gripMotors[0] = createMotor("motor 7");
 		gripMotors[1] = createMotor("motor 7 left");
 		gripperSensor = createDistanceSensor("gripper middle distance sensor");
@@ -533,8 +533,104 @@ public class PolyCreateControler extends Supervisor {
     }
 	
 	
+	public void write4() {
+		goLine(EDGE);
+		drawLine(EDGE);
+		doFullTurn();
+		goLine(EDGE);
+		turnLeft();
+		drawLine(EDGE);
+		turnLeft();
+		drawLine(EDGE);
+		doFullTurn();
+		goLine(EDGE);
+		drawLine(EDGE);
+	}
+	
+	public void write5() {
+		turnRight();
+		drawLine(EDGE);
+		turnLeft();
+		drawLine(EDGE);
+		turnLeft();
+		drawLine(EDGE);
+		turnRight();
+		drawLine(EDGE);
+		turnRight();
+		drawLine(EDGE);
+		turnRight();
+		goLine(2*EDGE);
+		turnLeft();
+	}
+	
+	public void write6() {
+		turnRight();
+		drawLine(EDGE);
+		turnLeft();
+		drawLine(EDGE);
+		turnLeft();
+		drawLine(EDGE);
+		turnRight();
+		drawLine(EDGE);
+		turnRight();
+		drawLine(EDGE);
+		doFullTurn();
+		goLine(EDGE);
+		turnLeft();
+		goLine(EDGE);
+		drawLine(EDGE);
+		turnLeft();
+		goLine(EDGE);
+	}
 	
 	
+	public void write7() {
+		goLine(2*EDGE);
+		turnRight();
+		drawLine(EDGE);
+		turnRight();
+		drawLine(2*EDGE);
+		turnLeft();
+	}
+	
+	public void write8() {
+		drawLine(2*EDGE);
+		turnRight();
+		drawLine(EDGE);
+		turnRight();
+		drawLine(EDGE);
+		turnRight();
+		drawLine(EDGE);
+		doFullTurn();
+		goLine(EDGE);
+		turnRight();
+		drawLine(EDGE);
+		turnRight();
+		drawLine(EDGE);
+		doFullTurn();
+		goLine(EDGE);	
+	}
+	
+	public void write9() {
+		turnRight();
+		drawLine(EDGE);
+		turnLeft();
+		drawLine(2*EDGE);
+		turnLeft();
+		drawLine(EDGE);
+		turnLeft();
+		drawLine(EDGE);
+		turnLeft();
+		drawLine(EDGE);
+		turnRight();
+		goLine(EDGE);
+		turnLeft();
+	}
+	
+	public void writeSpace() {
+		goLine(EDGE);
+		turnLeft();
+	}
 	
 	
 
@@ -542,7 +638,14 @@ public class PolyCreateControler extends Supervisor {
 		PolyCreateControler controler = new PolyCreateControler();
 		controler.openGripper();
 		controler.fsm.setGrabActivated(false);
-		controler.write3();
+		controler.write2();
+		controler.writeSpace();
+		controler.write0();
+		controler.writeSpace();
+		controler.write2();
+		controler.writeSpace();
+		controler.write2();
+		controler.writeSpace();
 		
 		/*while (true) {
 			controler.passiveWait(0.1);
