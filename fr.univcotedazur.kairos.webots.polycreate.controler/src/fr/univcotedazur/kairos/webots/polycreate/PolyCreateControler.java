@@ -185,6 +185,7 @@ public class PolyCreateControler extends Supervisor {
 		fsm.getDoGoBackward().subscribe(new DoGoBackwardObserver(this));
 		fsm.getDoGoTo().subscribe(new DoGoToObserver(this));
 		fsm.getDoCatch().subscribe(new DoCatchObserver(this));
+		fsm.getDoFlushIRReceiver().subscribe(new DoFlushReceiverObserver(this));
 
 		/*
 		 * Start the robot
@@ -202,6 +203,7 @@ public class PolyCreateControler extends Supervisor {
 		if (isThereVirtualwall()) {
 			System.out.println("Virtual wall detected\n");
 			fsm.raiseVirtualWall();
+			this.flushIRReceiver();
 		} else  if (isThereCollisionAtLeft() || frontLeftDistanceSensor.getValue() < 250) {
 			System.out.println("          Left obstacle detected\n");
 			fsm.raiseFrontL();
@@ -356,6 +358,12 @@ public class PolyCreateControler extends Supervisor {
 		stop();
 		doStep();
 		this.isTurning=false;
+	}
+	
+	public void doFlushIRReceiver() {
+		System.out.println("flushReceiver");
+		this.flushIRReceiver();
+		
 	}
 	
 	
