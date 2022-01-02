@@ -404,14 +404,12 @@ public class PolyCreateControler extends Supervisor {
 	public void doGoTo() {
 		CameraRecognitionObject[] frontObjs = this.frontCamera.getRecognitionObjects();
 		CameraRecognitionObject obj = frontObjs[0];
-		System.out.println(frontObjs.length);
 		int oid = obj.getId();
 		Node obj2 = this.getFromId(oid);
 		double[] frontObjPos = obj.getPosition();
 		double x = frontObjPos[0];
 		double y = frontObjPos[1];
 		double angle = Math.atan(x/y*Math.PI/180);
-		System.out.println(angle);
 		if(angle >= turnPrecision) {
 			turn(angle);
 		}
@@ -422,7 +420,6 @@ public class PolyCreateControler extends Supervisor {
 			turn(Math.PI);
 			this.passiveWait(0.6);
 			fsm.raiseCatch();
-			System.out.println("heeeey");
 		}
 		System.out.println("rear distance : "+ this.getObjectDistanceToGripper());
 		
