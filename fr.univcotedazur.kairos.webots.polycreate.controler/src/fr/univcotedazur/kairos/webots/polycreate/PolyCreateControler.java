@@ -11,7 +11,9 @@
 
 package fr.univcotedazur.kairos.webots.polycreate;
 
+import java.util.ArrayList;
 import java.util.Random;
+import java.util.Scanner;
 
 //import org.eclipse.january.dataset.Dataset;
 //import org.eclipse.january.dataset.DatasetFactory;
@@ -50,7 +52,10 @@ public class PolyCreateControler extends Supervisor {
 	static double AXLE_LENGTH = 0.271756;
 	static double ENCODER_RESOLUTION = 507.9188;
 	static double turnPrecision= 0.025;
-
+	
+	static int choice = -1;
+	static String digits = "";
+ 
 	/**
 	 * the inkEvaporation parameter in the WorldInfo element of the robot scene may
 	 * be interesting to access
@@ -187,8 +192,9 @@ public class PolyCreateControler extends Supervisor {
 		fsm.getDoGoBackward().subscribe(new DoGoBackwardObserver(this));
 		fsm.getDoGoTo().subscribe(new DoGoToObserver(this));
 		fsm.getDoCatch().subscribe(new DoCatchObserver(this));
-		fsm.getDoFlushIRReceiver().subscribe(new DoFlushReceiverObserver(this));
-
+		fsm.getDoGetUserChoice().subscribe(new DoGetUserChoiceObserver(this));
+		fsm.getDoAskForDigits().subscribe(new DoAskForDigitsObserver(this));
+		fsm.getDoDrawDigits().subscribe(new DoDrawDigitsObserver(this));
 		/*
 		 * Start the robot
 		 */
@@ -363,10 +369,20 @@ public class PolyCreateControler extends Supervisor {
 		this.isTurning=false;
 	}
 	
-	public void doFlushIRReceiver() {
-		System.out.println("flushReceiver");
-		this.flushIRReceiver();
-		
+	
+	public void doGetUserChoice() {
+		System.out.println("Please choose a feature from the following :");
+		System.out.println("1 : Cleaning and putting away objects");
+		System.out.println("2 : Cleaning without putting away objects");
+		System.out.println("3 : Drawing digits on the floor");
+		Scanner sc = new Scanner(System.in);
+		choice = sc.nextInt();
+		while(choice != 1 && choice != 2 && choice != 3) {
+			System.out.println("Please enter a valid choice : ");
+			choice = sc.nextInt();
+		}
+		fsm.setUserChoice(choice);
+		fsm.setGrabActivated(choice==1);
 	}
 	
 	
@@ -411,6 +427,30 @@ public class PolyCreateControler extends Supervisor {
 		System.out.println("rear distance : "+ this.getObjectDistanceToGripper());
 		
 	}
+	
+	
+	public void doAskForDigits() {
+		
+		System.out.println("Please enter the digits : ");
+		Scanner sc = new Scanner(System.in);
+		digits = sc.nextLine();  
+		while(digits.length()<=0 || digits.length()>4) {
+			System.out.println("WARNING : The number of the digits must be between 1 and 4");
+			System.out.println("Please enter the digits : ");
+			digits = sc.nextLine();  
+		}
+		fsm.raiseDraw();
+	}
+	
+	public void doDrawDigits() {
+		for(int i=0; i<digits.length();i++) {
+			draw(digits.charAt(i));
+			draw(' ');
+		}
+		fsm.raiseGoMainMenu();
+	}
+	
+	
 
 	/**
 	 * The values are returned as a 3D-vector, therefore only the indices 0, 1, and
@@ -632,20 +672,33 @@ public class PolyCreateControler extends Supervisor {
 		turnLeft();
 	}
 	
+	public void draw(char digit) {
+	    if (digit == '0') write0();
+	    if (digit == '1') write1();
+	    if (digit == '2') write2();
+	    if (digit == '3') write3();
+	    if (digit == '4') write4();
+	    if (digit == '5') write5();
+	    if (digit == '6') write6();
+	    if (digit == '7') write7();
+	    if (digit == '8') write8();
+	    if (digit == '9') write9();
+	    if (digit == ' ') writeSpace();
+	}
+	
+	
+	
 	
 
 	public static void main(String[] args) {
 		PolyCreateControler controler = new PolyCreateControler();
 		controler.openGripper();
-		controler.fsm.setGrabActivated(false);
-		controler.write2();
-		controler.writeSpace();
-		controler.write0();
-		controler.writeSpace();
-		controler.write2();
-		controler.writeSpace();
-		controler.write2();
-		controler.writeSpace();
+		if (choice != -1) { // When user choose an option
+			while(true) {
+				controler.passiveWait(0.1);
+				controler.listen();
+			}
+		}
 		
 	}
 

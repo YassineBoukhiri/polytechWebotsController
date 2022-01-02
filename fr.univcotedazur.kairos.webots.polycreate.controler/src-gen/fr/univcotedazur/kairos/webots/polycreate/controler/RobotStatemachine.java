@@ -12,13 +12,17 @@ public class RobotStatemachine implements IStatemachine {
 		MAIN_REGION_BLOCKED_R1_PARTIALLY_BLOCKED,
 		MAIN_REGION_BLOCKED_R1_PARTIALLY_BLOCKED_R1_LEFT_BLOCKED,
 		MAIN_REGION_BLOCKED_R1_PARTIALLY_BLOCKED_R1_RIGHT_BLOCKED,
-		MAIN_REGION_BLOCKED_R1_BLOCKED,
+		MAIN_REGION_BLOCKED_R1_FULLY_BLOCKED,
 		MAIN_REGION_BLOCKED_R1_VIRTUAL_WALL,
 		MAIN_REGION_WORKING,
 		MAIN_REGION_WORKING_R1_CLEANING,
 		MAIN_REGION_WORKING_R1_GRAB_OBJECT,
 		MAIN_REGION_WORKING_R1_GRAB_OBJECT_R1_CATCH,
 		MAIN_REGION_WORKING_R1_GRAB_OBJECT_R1_LOOK_FOR,
+		MAIN_REGION_WORKING_R1_DRAWING,
+		MAIN_REGION_WORKING_R1_DRAWING__REGION0_GETTING_DIGITS,
+		MAIN_REGION_WORKING_R1_DRAWING__REGION0_DRAW_DIGITS,
+		MAIN_REGION_MAIN_MENU,
 		$NULLSTATE$
 	};
 	
@@ -50,6 +54,8 @@ public class RobotStatemachine implements IStatemachine {
 		clearInEvents();
 		
 		setGrabActivated(false);
+		
+		setUserChoice(-1);
 		
 		isExecuting = false;
 	}
@@ -103,6 +109,8 @@ public class RobotStatemachine implements IStatemachine {
 		goToEvent = false;
 		gotIt = false;
 		catchEvent = false;
+		draw = false;
+		goMainMenu = false;
 	}
 	
 	private void microStep() {
@@ -113,8 +121,8 @@ public class RobotStatemachine implements IStatemachine {
 		case MAIN_REGION_BLOCKED_R1_PARTIALLY_BLOCKED_R1_RIGHT_BLOCKED:
 			main_region_BLOCKED_r1_PARTIALLY_BLOCKED_r1_RIGHT_BLOCKED_react(-1);
 			break;
-		case MAIN_REGION_BLOCKED_R1_BLOCKED:
-			main_region_BLOCKED_r1_BLOCKED_react(-1);
+		case MAIN_REGION_BLOCKED_R1_FULLY_BLOCKED:
+			main_region_BLOCKED_r1_FULLY_BLOCKED_react(-1);
 			break;
 		case MAIN_REGION_BLOCKED_R1_VIRTUAL_WALL:
 			main_region_BLOCKED_r1_VIRTUAL_WALL_react(-1);
@@ -127,6 +135,15 @@ public class RobotStatemachine implements IStatemachine {
 			break;
 		case MAIN_REGION_WORKING_R1_GRAB_OBJECT_R1_LOOK_FOR:
 			main_region_WORKING_r1_GRAB_OBJECT_r1_LOOK_FOR_react(-1);
+			break;
+		case MAIN_REGION_WORKING_R1_DRAWING__REGION0_GETTING_DIGITS:
+			main_region_WORKING_r1_DRAWING__region0_GETTING_DIGITS_react(-1);
+			break;
+		case MAIN_REGION_WORKING_R1_DRAWING__REGION0_DRAW_DIGITS:
+			main_region_WORKING_r1_DRAWING__region0_DRAW_DIGITS_react(-1);
+			break;
+		case MAIN_REGION_MAIN_MENU:
+			main_region_MAIN_MENU_react(-1);
 			break;
 		default:
 			break;
@@ -148,7 +165,7 @@ public class RobotStatemachine implements IStatemachine {
 			clearInEvents();
 			
 			nextEvent();
-		} while (((((((((((front || frontL) || frontR) || virtualWall) || back) || lTS) || rTS) || clear) || goToEvent) || gotIt) || catchEvent));
+		} while (((((((((((((front || frontL) || frontR) || virtualWall) || back) || lTS) || rTS) || clear) || goToEvent) || gotIt) || catchEvent) || draw) || goMainMenu));
 		
 		isExecuting = false;
 	}
@@ -175,13 +192,13 @@ public class RobotStatemachine implements IStatemachine {
 			return stateVector[0] == State.MAIN_REGION_BLOCKED_R1_PARTIALLY_BLOCKED_R1_LEFT_BLOCKED;
 		case MAIN_REGION_BLOCKED_R1_PARTIALLY_BLOCKED_R1_RIGHT_BLOCKED:
 			return stateVector[0] == State.MAIN_REGION_BLOCKED_R1_PARTIALLY_BLOCKED_R1_RIGHT_BLOCKED;
-		case MAIN_REGION_BLOCKED_R1_BLOCKED:
-			return stateVector[0] == State.MAIN_REGION_BLOCKED_R1_BLOCKED;
+		case MAIN_REGION_BLOCKED_R1_FULLY_BLOCKED:
+			return stateVector[0] == State.MAIN_REGION_BLOCKED_R1_FULLY_BLOCKED;
 		case MAIN_REGION_BLOCKED_R1_VIRTUAL_WALL:
 			return stateVector[0] == State.MAIN_REGION_BLOCKED_R1_VIRTUAL_WALL;
 		case MAIN_REGION_WORKING:
 			return stateVector[0].ordinal() >= State.
-					MAIN_REGION_WORKING.ordinal()&& stateVector[0].ordinal() <= State.MAIN_REGION_WORKING_R1_GRAB_OBJECT_R1_LOOK_FOR.ordinal();
+					MAIN_REGION_WORKING.ordinal()&& stateVector[0].ordinal() <= State.MAIN_REGION_WORKING_R1_DRAWING__REGION0_DRAW_DIGITS.ordinal();
 		case MAIN_REGION_WORKING_R1_CLEANING:
 			return stateVector[0] == State.MAIN_REGION_WORKING_R1_CLEANING;
 		case MAIN_REGION_WORKING_R1_GRAB_OBJECT:
@@ -191,6 +208,15 @@ public class RobotStatemachine implements IStatemachine {
 			return stateVector[0] == State.MAIN_REGION_WORKING_R1_GRAB_OBJECT_R1_CATCH;
 		case MAIN_REGION_WORKING_R1_GRAB_OBJECT_R1_LOOK_FOR:
 			return stateVector[0] == State.MAIN_REGION_WORKING_R1_GRAB_OBJECT_R1_LOOK_FOR;
+		case MAIN_REGION_WORKING_R1_DRAWING:
+			return stateVector[0].ordinal() >= State.
+					MAIN_REGION_WORKING_R1_DRAWING.ordinal()&& stateVector[0].ordinal() <= State.MAIN_REGION_WORKING_R1_DRAWING__REGION0_DRAW_DIGITS.ordinal();
+		case MAIN_REGION_WORKING_R1_DRAWING__REGION0_GETTING_DIGITS:
+			return stateVector[0] == State.MAIN_REGION_WORKING_R1_DRAWING__REGION0_GETTING_DIGITS;
+		case MAIN_REGION_WORKING_R1_DRAWING__REGION0_DRAW_DIGITS:
+			return stateVector[0] == State.MAIN_REGION_WORKING_R1_DRAWING__REGION0_DRAW_DIGITS;
+		case MAIN_REGION_MAIN_MENU:
+			return stateVector[0] == State.MAIN_REGION_MAIN_MENU;
 		default:
 			return false;
 		}
@@ -327,6 +353,46 @@ public class RobotStatemachine implements IStatemachine {
 			});
 			runCycle();
 		}
+	}
+	
+	private boolean draw;
+	
+	
+	public void raiseDraw() {
+		synchronized(RobotStatemachine.this) {
+			inEventQueue.add(() -> {
+				draw = true;
+			});
+			runCycle();
+		}
+	}
+	
+	private boolean goMainMenu;
+	
+	
+	public void raiseGoMainMenu() {
+		synchronized(RobotStatemachine.this) {
+			inEventQueue.add(() -> {
+				goMainMenu = true;
+			});
+			runCycle();
+		}
+	}
+	
+	private boolean doGetUserChoice;
+	
+	
+	protected void raiseDoGetUserChoice() {
+		synchronized(RobotStatemachine.this) {
+			doGetUserChoice = true;
+			doGetUserChoiceObservable.next(null);
+		}
+	}
+	
+	private Observable<Void> doGetUserChoiceObservable = new Observable<Void>();
+	
+	public Observable<Void> getDoGetUserChoice() {
+		return doGetUserChoiceObservable;
 	}
 	
 	private boolean doFullTurn;
@@ -473,20 +539,36 @@ public class RobotStatemachine implements IStatemachine {
 		return doCatchObservable;
 	}
 	
-	private boolean doFlushIRReceiver;
+	private boolean doAskForDigits;
 	
 	
-	protected void raiseDoFlushIRReceiver() {
+	protected void raiseDoAskForDigits() {
 		synchronized(RobotStatemachine.this) {
-			doFlushIRReceiver = true;
-			doFlushIRReceiverObservable.next(null);
+			doAskForDigits = true;
+			doAskForDigitsObservable.next(null);
 		}
 	}
 	
-	private Observable<Void> doFlushIRReceiverObservable = new Observable<Void>();
+	private Observable<Void> doAskForDigitsObservable = new Observable<Void>();
 	
-	public Observable<Void> getDoFlushIRReceiver() {
-		return doFlushIRReceiverObservable;
+	public Observable<Void> getDoAskForDigits() {
+		return doAskForDigitsObservable;
+	}
+	
+	private boolean doDrawDigits;
+	
+	
+	protected void raiseDoDrawDigits() {
+		synchronized(RobotStatemachine.this) {
+			doDrawDigits = true;
+			doDrawDigitsObservable.next(null);
+		}
+	}
+	
+	private Observable<Void> doDrawDigitsObservable = new Observable<Void>();
+	
+	public Observable<Void> getDoDrawDigits() {
+		return doDrawDigitsObservable;
 	}
 	
 	private boolean grabActivated;
@@ -500,6 +582,20 @@ public class RobotStatemachine implements IStatemachine {
 	public void setGrabActivated(boolean value) {
 		synchronized(RobotStatemachine.this) {
 			this.grabActivated = value;
+		}
+	}
+	
+	private long userChoice;
+	
+	public synchronized long getUserChoice() {
+		synchronized(RobotStatemachine.this) {
+			return userChoice;
+		}
+	}
+	
+	public void setUserChoice(long value) {
+		synchronized(RobotStatemachine.this) {
+			this.userChoice = value;
 		}
 	}
 	
@@ -517,8 +613,8 @@ public class RobotStatemachine implements IStatemachine {
 		raiseDoTurnRandomlyLeft();
 	}
 	
-	/* Entry action for state 'BLOCKED'. */
-	private void entryAction_main_region_BLOCKED_r1_BLOCKED() {
+	/* Entry action for state 'FULLY_BLOCKED'. */
+	private void entryAction_main_region_BLOCKED_r1_FULLY_BLOCKED() {
 		raiseDoFullTurn();
 	}
 	
@@ -542,6 +638,21 @@ public class RobotStatemachine implements IStatemachine {
 		raiseDoGoTo();
 	}
 	
+	/* Entry action for state 'GETTING_DIGITS'. */
+	private void entryAction_main_region_WORKING_r1_DRAWING__region0_GETTING_DIGITS() {
+		raiseDoAskForDigits();
+	}
+	
+	/* Entry action for state 'DRAW_DIGITS'. */
+	private void entryAction_main_region_WORKING_r1_DRAWING__region0_DRAW_DIGITS() {
+		raiseDoDrawDigits();
+	}
+	
+	/* Entry action for state 'MAIN_MENU'. */
+	private void entryAction_main_region_MAIN_MENU() {
+		raiseDoGetUserChoice();
+	}
+	
 	/* 'default' enter sequence for state PARTIALLY_BLOCKED */
 	private void enterSequence_main_region_BLOCKED_r1_PARTIALLY_BLOCKED_default() {
 		enterSequence_main_region_BLOCKED_r1_PARTIALLY_BLOCKED_r1_default();
@@ -563,10 +674,10 @@ public class RobotStatemachine implements IStatemachine {
 		historyVector[0] = stateVector[0];
 	}
 	
-	/* 'default' enter sequence for state BLOCKED */
-	private void enterSequence_main_region_BLOCKED_r1_BLOCKED_default() {
-		entryAction_main_region_BLOCKED_r1_BLOCKED();
-		stateVector[0] = State.MAIN_REGION_BLOCKED_R1_BLOCKED;
+	/* 'default' enter sequence for state FULLY_BLOCKED */
+	private void enterSequence_main_region_BLOCKED_r1_FULLY_BLOCKED_default() {
+		entryAction_main_region_BLOCKED_r1_FULLY_BLOCKED();
+		stateVector[0] = State.MAIN_REGION_BLOCKED_R1_FULLY_BLOCKED;
 	}
 	
 	/* 'default' enter sequence for state VIRTUAL_WALL */
@@ -603,6 +714,29 @@ public class RobotStatemachine implements IStatemachine {
 		stateVector[0] = State.MAIN_REGION_WORKING_R1_GRAB_OBJECT_R1_LOOK_FOR;
 	}
 	
+	/* 'default' enter sequence for state DRAWING */
+	private void enterSequence_main_region_WORKING_r1_DRAWING_default() {
+		enterSequence_main_region_WORKING_r1_DRAWING__region0_default();
+	}
+	
+	/* 'default' enter sequence for state GETTING_DIGITS */
+	private void enterSequence_main_region_WORKING_r1_DRAWING__region0_GETTING_DIGITS_default() {
+		entryAction_main_region_WORKING_r1_DRAWING__region0_GETTING_DIGITS();
+		stateVector[0] = State.MAIN_REGION_WORKING_R1_DRAWING__REGION0_GETTING_DIGITS;
+	}
+	
+	/* 'default' enter sequence for state DRAW_DIGITS */
+	private void enterSequence_main_region_WORKING_r1_DRAWING__region0_DRAW_DIGITS_default() {
+		entryAction_main_region_WORKING_r1_DRAWING__region0_DRAW_DIGITS();
+		stateVector[0] = State.MAIN_REGION_WORKING_R1_DRAWING__REGION0_DRAW_DIGITS;
+	}
+	
+	/* 'default' enter sequence for state MAIN_MENU */
+	private void enterSequence_main_region_MAIN_MENU_default() {
+		entryAction_main_region_MAIN_MENU();
+		stateVector[0] = State.MAIN_REGION_MAIN_MENU;
+	}
+	
 	/* 'default' enter sequence for region main region */
 	private void enterSequence_main_region_default() {
 		react_main_region__entry_Default();
@@ -637,6 +771,11 @@ public class RobotStatemachine implements IStatemachine {
 		react_main_region_WORKING_r1_GRAB_OBJECT_r1__entry_Default();
 	}
 	
+	/* 'default' enter sequence for region  */
+	private void enterSequence_main_region_WORKING_r1_DRAWING__region0_default() {
+		react_main_region_WORKING_r1_DRAWING__region0__entry_Default();
+	}
+	
 	/* Default exit sequence for state BLOCKED */
 	private void exitSequence_main_region_BLOCKED() {
 		exitSequence_main_region_BLOCKED_r1();
@@ -657,8 +796,8 @@ public class RobotStatemachine implements IStatemachine {
 		stateVector[0] = State.$NULLSTATE$;
 	}
 	
-	/* Default exit sequence for state BLOCKED */
-	private void exitSequence_main_region_BLOCKED_r1_BLOCKED() {
+	/* Default exit sequence for state FULLY_BLOCKED */
+	private void exitSequence_main_region_BLOCKED_r1_FULLY_BLOCKED() {
 		stateVector[0] = State.$NULLSTATE$;
 	}
 	
@@ -692,6 +831,21 @@ public class RobotStatemachine implements IStatemachine {
 		stateVector[0] = State.$NULLSTATE$;
 	}
 	
+	/* Default exit sequence for state GETTING_DIGITS */
+	private void exitSequence_main_region_WORKING_r1_DRAWING__region0_GETTING_DIGITS() {
+		stateVector[0] = State.$NULLSTATE$;
+	}
+	
+	/* Default exit sequence for state DRAW_DIGITS */
+	private void exitSequence_main_region_WORKING_r1_DRAWING__region0_DRAW_DIGITS() {
+		stateVector[0] = State.$NULLSTATE$;
+	}
+	
+	/* Default exit sequence for state MAIN_MENU */
+	private void exitSequence_main_region_MAIN_MENU() {
+		stateVector[0] = State.$NULLSTATE$;
+	}
+	
 	/* Default exit sequence for region main region */
 	private void exitSequence_main_region() {
 		switch (stateVector[0]) {
@@ -701,8 +855,8 @@ public class RobotStatemachine implements IStatemachine {
 		case MAIN_REGION_BLOCKED_R1_PARTIALLY_BLOCKED_R1_RIGHT_BLOCKED:
 			exitSequence_main_region_BLOCKED_r1_PARTIALLY_BLOCKED_r1_RIGHT_BLOCKED();
 			break;
-		case MAIN_REGION_BLOCKED_R1_BLOCKED:
-			exitSequence_main_region_BLOCKED_r1_BLOCKED();
+		case MAIN_REGION_BLOCKED_R1_FULLY_BLOCKED:
+			exitSequence_main_region_BLOCKED_r1_FULLY_BLOCKED();
 			break;
 		case MAIN_REGION_BLOCKED_R1_VIRTUAL_WALL:
 			exitSequence_main_region_BLOCKED_r1_VIRTUAL_WALL();
@@ -715,6 +869,15 @@ public class RobotStatemachine implements IStatemachine {
 			break;
 		case MAIN_REGION_WORKING_R1_GRAB_OBJECT_R1_LOOK_FOR:
 			exitSequence_main_region_WORKING_r1_GRAB_OBJECT_r1_LOOK_FOR();
+			break;
+		case MAIN_REGION_WORKING_R1_DRAWING__REGION0_GETTING_DIGITS:
+			exitSequence_main_region_WORKING_r1_DRAWING__region0_GETTING_DIGITS();
+			break;
+		case MAIN_REGION_WORKING_R1_DRAWING__REGION0_DRAW_DIGITS:
+			exitSequence_main_region_WORKING_r1_DRAWING__region0_DRAW_DIGITS();
+			break;
+		case MAIN_REGION_MAIN_MENU:
+			exitSequence_main_region_MAIN_MENU();
 			break;
 		default:
 			break;
@@ -730,8 +893,8 @@ public class RobotStatemachine implements IStatemachine {
 		case MAIN_REGION_BLOCKED_R1_PARTIALLY_BLOCKED_R1_RIGHT_BLOCKED:
 			exitSequence_main_region_BLOCKED_r1_PARTIALLY_BLOCKED_r1_RIGHT_BLOCKED();
 			break;
-		case MAIN_REGION_BLOCKED_R1_BLOCKED:
-			exitSequence_main_region_BLOCKED_r1_BLOCKED();
+		case MAIN_REGION_BLOCKED_R1_FULLY_BLOCKED:
+			exitSequence_main_region_BLOCKED_r1_FULLY_BLOCKED();
 			break;
 		case MAIN_REGION_BLOCKED_R1_VIRTUAL_WALL:
 			exitSequence_main_region_BLOCKED_r1_VIRTUAL_WALL();
@@ -766,6 +929,12 @@ public class RobotStatemachine implements IStatemachine {
 			break;
 		case MAIN_REGION_WORKING_R1_GRAB_OBJECT_R1_LOOK_FOR:
 			exitSequence_main_region_WORKING_r1_GRAB_OBJECT_r1_LOOK_FOR();
+			break;
+		case MAIN_REGION_WORKING_R1_DRAWING__REGION0_GETTING_DIGITS:
+			exitSequence_main_region_WORKING_r1_DRAWING__region0_GETTING_DIGITS();
+			break;
+		case MAIN_REGION_WORKING_R1_DRAWING__REGION0_DRAW_DIGITS:
+			exitSequence_main_region_WORKING_r1_DRAWING__region0_DRAW_DIGITS();
 			break;
 		default:
 			break;
@@ -807,8 +976,13 @@ public class RobotStatemachine implements IStatemachine {
 	}
 	
 	/* Default react sequence for initial entry  */
+	private void react_main_region_WORKING_r1_DRAWING__region0__entry_Default() {
+		enterSequence_main_region_WORKING_r1_DRAWING__region0_GETTING_DIGITS_default();
+	}
+	
+	/* Default react sequence for initial entry  */
 	private void react_main_region__entry_Default() {
-		enterSequence_main_region_WORKING_default();
+		enterSequence_main_region_MAIN_MENU_default();
 	}
 	
 	private long react(long transitioned_before) {
@@ -875,14 +1049,14 @@ public class RobotStatemachine implements IStatemachine {
 		if (transitioned_after<0) {
 			if (front) {
 				exitSequence_main_region_BLOCKED_r1_PARTIALLY_BLOCKED();
-				enterSequence_main_region_BLOCKED_r1_BLOCKED_default();
+				enterSequence_main_region_BLOCKED_r1_FULLY_BLOCKED_default();
 				main_region_BLOCKED_react(0);
 				
 				transitioned_after = 0;
 			} else {
 				if (frontR) {
 					exitSequence_main_region_BLOCKED_r1_PARTIALLY_BLOCKED();
-					enterSequence_main_region_BLOCKED_r1_BLOCKED_default();
+					enterSequence_main_region_BLOCKED_r1_FULLY_BLOCKED_default();
 					main_region_BLOCKED_react(0);
 					
 					transitioned_after = 0;
@@ -902,7 +1076,7 @@ public class RobotStatemachine implements IStatemachine {
 		if (transitioned_after<0) {
 			if (frontL) {
 				exitSequence_main_region_BLOCKED_r1_PARTIALLY_BLOCKED();
-				enterSequence_main_region_BLOCKED_r1_BLOCKED_default();
+				enterSequence_main_region_BLOCKED_r1_FULLY_BLOCKED_default();
 				main_region_BLOCKED_react(0);
 				
 				transitioned_after = 0;
@@ -915,7 +1089,7 @@ public class RobotStatemachine implements IStatemachine {
 		return transitioned_after;
 	}
 	
-	private long main_region_BLOCKED_r1_BLOCKED_react(long transitioned_before) {
+	private long main_region_BLOCKED_r1_FULLY_BLOCKED_react(long transitioned_before) {
 		long transitioned_after = transitioned_before;
 		
 		if (transitioned_after<0) {
@@ -1062,6 +1236,85 @@ public class RobotStatemachine implements IStatemachine {
 		/* If no transition was taken then execute local reactions */
 		if (transitioned_after==transitioned_before) {
 			transitioned_after = main_region_WORKING_r1_GRAB_OBJECT_react(transitioned_before);
+		}
+		return transitioned_after;
+	}
+	
+	private long main_region_WORKING_r1_DRAWING_react(long transitioned_before) {
+		long transitioned_after = transitioned_before;
+		
+		if (transitioned_after<0) {
+		}
+		/* If no transition was taken then execute local reactions */
+		if (transitioned_after==transitioned_before) {
+			transitioned_after = main_region_WORKING_react(transitioned_before);
+		}
+		return transitioned_after;
+	}
+	
+	private long main_region_WORKING_r1_DRAWING__region0_GETTING_DIGITS_react(long transitioned_before) {
+		long transitioned_after = transitioned_before;
+		
+		if (transitioned_after<0) {
+			if (draw) {
+				exitSequence_main_region_WORKING_r1_DRAWING__region0_GETTING_DIGITS();
+				enterSequence_main_region_WORKING_r1_DRAWING__region0_DRAW_DIGITS_default();
+				main_region_WORKING_r1_DRAWING_react(0);
+				
+				transitioned_after = 0;
+			}
+		}
+		/* If no transition was taken then execute local reactions */
+		if (transitioned_after==transitioned_before) {
+			transitioned_after = main_region_WORKING_r1_DRAWING_react(transitioned_before);
+		}
+		return transitioned_after;
+	}
+	
+	private long main_region_WORKING_r1_DRAWING__region0_DRAW_DIGITS_react(long transitioned_before) {
+		long transitioned_after = transitioned_before;
+		
+		if (transitioned_after<0) {
+			if (goMainMenu) {
+				exitSequence_main_region_WORKING();
+				setUserChoice(-1);
+				
+				enterSequence_main_region_MAIN_MENU_default();
+				react(0);
+				
+				transitioned_after = 0;
+			}
+		}
+		/* If no transition was taken then execute local reactions */
+		if (transitioned_after==transitioned_before) {
+			transitioned_after = main_region_WORKING_r1_DRAWING_react(transitioned_before);
+		}
+		return transitioned_after;
+	}
+	
+	private long main_region_MAIN_MENU_react(long transitioned_before) {
+		long transitioned_after = transitioned_before;
+		
+		if (transitioned_after<0) {
+			if ((getUserChoice()==1 || getUserChoice()==2)) {
+				exitSequence_main_region_MAIN_MENU();
+				enterSequence_main_region_WORKING_r1_CLEANING_default();
+				react(0);
+				
+				transitioned_after = 0;
+			} else {
+				if (getUserChoice()==3) {
+					exitSequence_main_region_MAIN_MENU();
+					enterSequence_main_region_WORKING_r1_DRAWING_default();
+					react(0);
+					
+					transitioned_after = 0;
+				}
+			}
+		}
+		/* If no transition was taken then execute local reactions */
+		if (transitioned_after==transitioned_before) {
+			transitioned_after = react(transitioned_before);
 		}
 		return transitioned_after;
 	}
